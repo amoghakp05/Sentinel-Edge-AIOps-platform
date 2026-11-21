@@ -1324,6 +1324,10 @@
       }
     }
 
+    function formatDate(isoStr) {
+      return formatTime(isoStr);
+    }
+
     function switchTab(tabId, ev) {
       document.querySelectorAll(".tab-btn").forEach(b => {
         b.classList.remove("active");
@@ -2939,7 +2943,7 @@
             tr.style.background = "rgba(56, 189, 248, 0.15)";
           }
           tr.appendChild(createCell(rec.seq || (records.length - idx), false, "var(--muted)"));
-          tr.appendChild(createCell(formatDate(rec.ts_utc)));
+          tr.appendChild(createCell(formatTime(rec.ts_utc)));
           tr.appendChild(createCell(rec.payload_id, true, "var(--primary)"));
 
           // Status badge
@@ -2973,11 +2977,11 @@
           tbody.appendChild(tr);
         });
 
-        // Auto-select latest record if none selected or if active one not in list or if still showing unauthorized
+        // Auto-select latest record if none selected or if active one not in list or if placeholder shown
         const rawDisp = document.getElementById("egressRawDisplay");
-        const isPlaceholder = rawDisp && rawDisp.textContent.includes("[Unauthorized]");
+        const isPlaceholder = rawDisp && (rawDisp.textContent.includes("[Unauthorized]") || rawDisp.textContent.includes("Select or inject"));
         const latestId = records[0] ? records[0].payload_id : null;
-        if ((!activeEgressPayloadId || !records.find(r => r.payload_id === activeEgressPayloadId) || isPlaceholder) && latestId) {
+        if (latestId && (!activeEgressPayloadId || !records.find(r => r.payload_id === activeEgressPayloadId) || isPlaceholder)) {
           inspectEgressPayload(latestId);
         } else if (activeEgressPayloadId) {
           inspectEgressPayload(activeEgressPayloadId);
@@ -3001,7 +3005,7 @@
         const data = await res.json();
 
         const timeEl = document.getElementById("currentEgressTime");
-        if (timeEl) timeEl.textContent = "UTC Recorded: " + formatDate(data.ts_utc);
+        if (timeEl) timeEl.textContent = "UTC Recorded: " + formatTime(data.ts_utc);
 
         const rawDisp = document.getElementById("egressRawDisplay");
         if (rawDisp) {
