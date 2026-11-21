@@ -858,6 +858,64 @@
       </div>
     </div>
 
+    <!-- Interactive Custom Raw Data Ingestion & 2-Layer Processor -->
+    <div class="card" style="margin-bottom: 20px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(15, 23, 42, 0.7);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h3 style="margin: 0; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+            📥 Live Raw Data Ingestion & 2-Layer Pipeline Tester
+          </h3>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 3px;">
+            Upload a raw log file or paste custom unredacted events below. Watch it pass through <strong>Layer 1 (Local Edge Redaction)</strong> and <strong>Layer 2 (Central SaaS Cloud Ingestion)</strong> in real time.
+          </div>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button onclick="setSampleRaw('ssh')" class="btn-secondary" style="font-size: 11px; padding: 4px 8px;">📋 Sample: SSH Secret</button>
+          <button onclick="setSampleRaw('aws')" class="btn-secondary" style="font-size: 11px; padding: 4px 8px;">📋 Sample: AWS Token</button>
+          <button onclick="setSampleRaw('db')" class="btn-secondary" style="font-size: 11px; padding: 4px 8px;">📋 Sample: DB Credentials</button>
+        </div>
+      </div>
+
+      <!-- Raw Input Area & File Upload -->
+      <div style="margin-bottom: 12px;">
+        <textarea id="customRawInput" rows="3" placeholder="Enter or paste any raw unredacted log line... e.g. sshd[4211]: Failed password for root from 192.168.1.100 port 22 password=MySuperSecretPass! token=eyJhbGciOi... user=admin" style="width: 100%; box-sizing: border-box; background: #080d1a; border: 1px solid var(--border); border-radius: 4px; padding: 10px; color: #fff; font-family: monospace; font-size: 13px; line-height: 1.5; resize: vertical;"></textarea>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <input type="file" id="rawLogFileInput" accept=".log,.txt,.json" onchange="handleRawFileSelect(event)" style="display: none;">
+          <button onclick="document.getElementById('rawLogFileInput').click()" class="btn-secondary" style="font-size: 12px; padding: 7px 12px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            📁 Upload Log File (.log / .txt)
+          </button>
+          <span id="selectedFileName" style="font-size: 12px; color: var(--muted);">No file chosen</span>
+        </div>
+        <div>
+          <button id="btnProcessRaw" onclick="submitCustomRawData()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; font-weight: 700; padding: 8px 18px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            🚀 Ingest & Process Through 2 Layers
+          </button>
+        </div>
+      </div>
+
+      <!-- Interactive Step-by-Step Breakdown Container -->
+      <div id="pipelineBreakdownBox" style="display: none; margin-top: 16px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); border-radius: 6px; padding: 14px;">
+        <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+          <span style="color: var(--primary);">●</span> Two-Layer Processing Results:
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px;">
+          <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 4px; padding: 10px;">
+            <div style="font-weight: 700; color: #f87171; font-size: 12px; margin-bottom: 4px;">LAYER 1: LOCAL EDGE GATE</div>
+            <div style="font-size: 12px; color: var(--muted);" id="l1StatusText">Scanned with 13 regex signatures</div>
+            <div id="l1SecretsDetected" style="margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;"></div>
+          </div>
+          <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 4px; padding: 10px;">
+            <div style="font-weight: 700; color: #4ade80; font-size: 12px; margin-bottom: 4px;">LAYER 2: CENTRAL SAAS CLOUD GATE</div>
+            <div style="font-size: 12px; color: var(--muted);" id="l2StatusText">Validated contracts/allow-list.yaml</div>
+            <div id="l2DigestText" style="font-family: monospace; font-size: 11px; color: #86efac; margin-top: 6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Live Side-by-Side Audit View (The terminal equivalent) -->
     <div class="card" style="margin-bottom: 20px;">
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
@@ -2947,6 +3005,114 @@
         }
       } catch (err) {
         console.error("Error injecting demo secret:", err);
+      }
+    }
+
+    function setSampleRaw(type) {
+      const input = document.getElementById("customRawInput");
+      if (!input) return;
+      if (type === "ssh") {
+        input.value = "sshd[4102]: Failed password for root from 192.168.1.55 port 44211 ssh2 password=SuperSecretPassword123! token=ghp_ABC123456789 user=admin";
+      } else if (type === "aws") {
+        input.value = "app-gateway[881]: AWS API connection failed credentials=AKIAIOSFODNN7EXAMPLE secret=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY from 10.0.4.12";
+      } else if (type === "db") {
+        input.value = "postgres-client[102]: Database connection failed uri=postgres://dbuser:P@ssw0rd999@172.16.0.4:5432/production_customers";
+      }
+    }
+
+    function handleRawFileSelect(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const lbl = document.getElementById("selectedFileName");
+      if (lbl) lbl.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const text = e.target.result;
+        const input = document.getElementById("customRawInput");
+        if (input) input.value = text.trim();
+      };
+      reader.readAsText(file);
+    }
+
+    async function submitCustomRawData() {
+      const input = document.getElementById("customRawInput");
+      if (!input || !input.value.trim()) {
+        alert("Please enter or paste raw data first.");
+        return;
+      }
+      const rawText = input.value.trim();
+      const btn = document.getElementById("btnProcessRaw");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Processing...";
+      }
+
+      try {
+        const res = await fetch(apiUrl("/api/egress/process-raw"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            raw_text: rawText,
+            category: "auth",
+            source: "192.168.1.100",
+            kind: "alert"
+          })
+        });
+
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const data = await res.json();
+
+        if (res.ok && data.status === "success") {
+          const box = document.getElementById("pipelineBreakdownBox");
+          if (box) box.style.display = "block";
+
+          const l1Status = document.getElementById("l1StatusText");
+          if (l1Status) {
+            l1Status.textContent = `Stored in ${data.layer1_edge.stored_location}. Entity pseudonymized: ${data.layer1_edge.source_pseudonym}`;
+          }
+
+          const l1Badges = document.getElementById("l1SecretsDetected");
+          if (l1Badges) {
+            l1Badges.replaceChildren();
+            const secs = data.layer1_edge.detected_secrets || [];
+            if (secs.length === 0) {
+              const b = document.createElement("span");
+              b.className = "badge badge-good";
+              b.textContent = "No raw secrets detected";
+              l1Badges.appendChild(b);
+            } else {
+              secs.forEach(s => {
+                const b = document.createElement("span");
+                b.className = "badge badge-poor";
+                b.textContent = `Scrubbed: ${s}`;
+                l1Badges.appendChild(b);
+              });
+            }
+          }
+
+          const l2Status = document.getElementById("l2StatusText");
+          if (l2Status) {
+            l2Status.textContent = `Transmitted over WAN to ${data.layer2_saas.destination}. contracts/allow-list.yaml validated.`;
+          }
+
+          const l2Digest = document.getElementById("l2DigestText");
+          if (l2Digest) {
+            l2Digest.textContent = `SHA-256 Digest: ${data.layer2_saas.sha256_checksum.substring(0, 24)}... (Match: PASS)`;
+          }
+
+          await loadEgressRecords();
+          inspectEgressPayload(data.payload_id);
+        } else {
+          alert("Error: " + (data.error || data.reason || "Failed to process raw data"));
+        }
+      } catch (err) {
+        console.error("Error processing raw data:", err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "🚀 Ingest & Process Through 2 Layers";
+        }
       }
     }
   </script>

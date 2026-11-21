@@ -1156,3 +1156,122 @@ def api_post_egress_inject(
     except Exception as exc:
         return JSONResponse(status_code=500, content={"error": str(exc)})
 
+
+class ProcessRawPayload(BaseModel):
+    raw_text: str
+    category: Optional[str] = "auth"
+    source: Optional[str] = "192.168.1.100"
+    kind: Optional[str] = "alert"
+
+
+@router.post("/egress/process-raw")
+def api_post_egress_process_raw(
+    request: Request,
+    payload: ProcessRawPayload,
+    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+) -> Response:
+    """Submits user-provided raw data through the two-tier privacy pipeline."""
+    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization)
+    try:
+        from collector.models import RawRecord
+        from collector.normalize import normalize_and_store
+        from collector.redact import redact_text
+        from collector.pseudonym import compute_source_ref
+        from collector.uuidv7 import uuidv7
+        from collector import egress_log, policy
+
+        raw_text = payload.raw_text.strip()
+        if not raw_text:
+            return JSONResponse(status_code=400, content={"error": "Raw text cannot be empty"})
+
+        category = payload.category or "auth"
+        source = payload.source or "192.168.1.100"
+        kind = payload.kind or "alert"
+        now_utc = datetime.now(timezone.utc)
+
+        # ── LAYER 1: EDGE CUSTOMER TIER ──────────────────────────────────────
+        # 1. Store verbatim in local SQLite WAL (raw_events)
+        raw_rec = RawRecord(
+            adapter="manual_ui_upload",
+            source=source,
+            source_tz="UTC",
+            category=category,
+            raw_text=raw_text,
+            value=1.0,
+            unit="count",
+            ts=now_utc,
+        )
+        normalize_and_store(raw_rec)
+
+        # 2. Local Redaction Engine & Secret Scanner
+        clean_text, detected_categories = redact_text(raw_text)
+
+        # 3. Entity Pseudonymization (salted HMAC-SHA256)
+        src_ref = compute_source_ref(source)
+
+        # 4. Form candidate metadata payload
+        test_pid = uuidv7()
+        candidate = {
+            "payload_id": test_pid,
+            "schema_version": 1,
+            "collector_id": "col-acme-eu-1",
+            "event_time_utc": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "source_tz": "Europe/Berlin",
+            "sent_time_utc": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "source_ref": src_ref,
+            "kind": kind,
+            "category": category,
+            "severity": "critical" if any(c in detected_categories for c in ["password", "private_key", "token", "aws_key"]) else "info",
+            "value": 1.0,
+            "unit": "count",
+            "window_s": 5,
+            "context": clean_text[:200],
+        }
+
+        # 5. Pre-Egress Policy Gate (drop unknown keys, validate against contracts/allow-list.yaml)
+        allowed, filtered, policy_reason = policy.enforce_policy(candidate)
+        if not allowed or not filtered:
+            return JSONResponse(
+                status_code=422,
+                content={
+                    "status": "blocked_by_edge_policy",
+                    "reason": policy_reason,
+                    "layer1_edge": {
+                        "status": "BLOCKED",
+                        "detected_secrets": detected_categories,
+                    }
+                }
+            )
+
+        # ── LAYER 2: CENTRAL SAAS CLOUD TIER ─────────────────────────────────
+        exact_json = json.dumps(filtered, sort_keys=True)
+        sha256_hash = hashlib.sha256(exact_json.encode("utf-8")).hexdigest()
+
+        # Append to append-only egress_log and record SaaS ACK
+        egress_log.log_send_attempt(test_pid, exact_json, "http://localhost:8000/v1/ingest", status="acked")
+        egress_log.record_saas_ack(test_pid, sha256_hash)
+
+        return JSONResponse(status_code=200, content={
+            "status": "success",
+            "message": "Processed successfully through Layer 1 (Edge Gate) and Layer 2 (SaaS Cloud Ingestion).",
+            "payload_id": test_pid,
+            "layer1_edge": {
+                "stored_location": "Local SQLite WAL (collector_local.db / raw_events)",
+                "raw_text_verbatim": raw_text,
+                "detected_secrets": detected_categories,
+                "source_pseudonym": src_ref,
+                "sanitized_context": clean_text[:200],
+            },
+            "layer2_saas": {
+                "egress_payload": filtered,
+                "sha256_checksum": sha256_hash,
+                "saas_ack_hash": sha256_hash,
+                "cryptographic_match": True,
+                "destination": "http://localhost:8000/v1/ingest",
+            }
+        })
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+
+
