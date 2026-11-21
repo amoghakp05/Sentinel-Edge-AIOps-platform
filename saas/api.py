@@ -998,9 +998,10 @@ def api_get_egress_records(
     limit: int = Query(20, description="Max records to return"),
     x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
     authorization: Optional[str] = Header(None, alias="Authorization"),
+    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-Id"),
 ) -> Response:
     """Returns the latest transmitted egress payloads and SHA-256 digests from append-only ledger."""
-    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization)
+    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization, expected_tenant=x_tenant_id)
     try:
         conn = _get_collector_db_conn()
         rows = conn.execute(
@@ -1023,9 +1024,10 @@ def api_get_egress_show(
     payload_id: str = Query(..., description="Payload ID to inspect"),
     x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
     authorization: Optional[str] = Header(None, alias="Authorization"),
+    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-Id"),
 ) -> Response:
     """Returns side-by-side comparison: RAW source (local only) vs EGRESS payload (allow-listed metadata)."""
-    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization)
+    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization, expected_tenant=x_tenant_id)
     try:
         conn = _get_collector_db_conn()
         row = conn.execute(
@@ -1085,9 +1087,10 @@ def api_post_egress_inject(
     request: Request,
     x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
     authorization: Optional[str] = Header(None, alias="Authorization"),
+    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-Id"),
 ) -> Response:
     """Injects a simulated raw authentication secret locally, normalizes it, and sends verified metadata."""
-    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization)
+    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization, expected_tenant=x_tenant_id)
     try:
         from collector.models import RawRecord
         from collector.normalize import normalize_and_store
@@ -1170,9 +1173,10 @@ def api_post_egress_process_raw(
     payload: ProcessRawPayload,
     x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
     authorization: Optional[str] = Header(None, alias="Authorization"),
+    x_tenant_id: Optional[str] = Header(None, alias="X-Tenant-Id"),
 ) -> Response:
     """Submits user-provided raw data through the two-tier privacy pipeline."""
-    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization)
+    resolve_tenant_id(request, x_api_key=x_api_key, authorization=authorization, expected_tenant=x_tenant_id)
     try:
         from collector.models import RawRecord
         from collector.normalize import normalize_and_store

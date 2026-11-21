@@ -1040,9 +1040,12 @@
     let charts = {};
     let cachedIncidents = {};
 
-    // Dynamic viewer credentials managed via sessionStorage only (no static/committed tokens)
+    // Dynamic viewer credentials managed via sessionStorage with input fallback
     function getViewerToken() {
-      return sessionStorage.getItem("sentinel_viewer_token") || "";
+      const fromStorage = sessionStorage.getItem("sentinel_viewer_token");
+      if (fromStorage) return fromStorage;
+      const input = document.getElementById("viewerTokenInput");
+      return (input && input.value && input.value.trim()) ? input.value.trim() : "";
     }
 
     function apiUrl(path) {
@@ -1057,6 +1060,7 @@
       };
       if (tok) {
         headers["X-Api-Key"] = tok;
+        headers["Authorization"] = "Bearer " + tok;
       }
       return headers;
     }
@@ -1277,11 +1281,16 @@
       }
     }
 
-    function switchTab(tabId) {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    function switchTab(tabId, ev) {
+      document.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.remove("active");
+        if (b.getAttribute("onclick") && b.getAttribute("onclick").includes(`'${tabId}'`)) {
+          b.classList.add("active");
+        }
+      });
       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-      event.target.classList.add("active");
-      document.getElementById("tab-" + tabId).classList.add("active");
+      const tabEl = document.getElementById("tab-" + tabId);
+      if (tabEl) tabEl.classList.add("active");
       if (tabId === "remediation") {
         refreshRemediation();
       }
@@ -1491,6 +1500,7 @@
         fetchRemediations(),
         fetchRemediationAudit(),
         fetchMockState(),
+        loadEgressRecords(),
       ]);
       renderAll();
     }
@@ -1504,6 +1514,7 @@
       fetchSecurity();
       fetchRemediations();
       fetchRemediationAudit();
+      loadEgressRecords();
     }
 
     // API Calls — All endpoints authenticate via viewer token and render via plain text
@@ -2863,6 +2874,11 @@
           td.textContent = "No egress logs found yet. Click '⚡ Inject Demo Secret & Prove Egress' above to generate proof.";
           tr.appendChild(td);
           tbody.appendChild(tr);
+
+          const rawDisp = document.getElementById("egressRawDisplay");
+          if (rawDisp) rawDisp.textContent = "Ready. No egress records yet. Enter raw text or click '⚡ Inject Demo Secret & Prove Egress' above.";
+          const jsonDisp = document.getElementById("egressJsonDisplay");
+          if (jsonDisp) jsonDisp.textContent = "{}";
           return;
         }
 
@@ -2906,10 +2922,14 @@
           tbody.appendChild(tr);
         });
 
-        // Auto-select latest record if none selected or if active one not in list
+        // Auto-select latest record if none selected or if active one not in list or if still showing unauthorized
+        const rawDisp = document.getElementById("egressRawDisplay");
+        const isPlaceholder = rawDisp && rawDisp.textContent.includes("[Unauthorized]");
         const latestId = records[0] ? records[0].payload_id : null;
-        if ((!activeEgressPayloadId || !records.find(r => r.payload_id === activeEgressPayloadId)) && latestId) {
+        if ((!activeEgressPayloadId || !records.find(r => r.payload_id === activeEgressPayloadId) || isPlaceholder) && latestId) {
           inspectEgressPayload(latestId);
+        } else if (activeEgressPayloadId) {
+          inspectEgressPayload(activeEgressPayloadId);
         }
       } catch (err) {
         console.error("Error loading egress records:", err);
