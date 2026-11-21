@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <title>Sentinel Edge // AIOps Platform Dashboard</title>
@@ -394,10 +394,18 @@
       <!-- Sticky SaaS Navbar -->
       <header class="app-navbar">
         <div style="display: flex; align-items: center; gap: 14px;">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation menu">☰</button>
-          <div class="navbar-brand" style="display: none;" id="mobileBrand">
+          <!-- Three Lines / Three Dots Drawer Toggle Button -->
+          <button class="drawer-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle All Modules" title="All Modules (10 Features)">
+            <span style="font-size: 16px;">☰</span>
+            <span style="font-weight: 700;">All Modules</span>
+            <span style="font-size: 13px; opacity: 0.7;">⋮</span>
+          </button>
+          
+          <div class="navbar-brand">
+            <span style="font-size: 20px;">🛡️</span>
             <span class="brand-text">SENTINEL<span class="gradient-text">EDGE</span></span>
           </div>
+          
           <div id="staleIndicator" class="stale-warning">⚠ TELEMETRY STALE (>15s)</div>
         </div>
 
@@ -423,11 +431,11 @@
 
           <!-- Viewer Token Authentication Capsule -->
           <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated); padding: 4px 8px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); flex-wrap: wrap;">
-            <label style="color: var(--text-muted); font-size: 11.5px; font-weight: 600;">VIEWER TOKEN:</label>
-            <input type="password" id="viewerTokenInput" placeholder="Tenant token..." onkeydown="if(event.key==='Enter') saveViewerToken()" style="width: 140px; padding: 4px 8px; font-size: 12px; background: var(--bg-base); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: var(--radius-sm); min-height: 28px;">
+            <label style="color: var(--text-muted); font-size: 11.5px; font-weight: 600;">TOKEN:</label>
+            <input type="password" id="viewerTokenInput" placeholder="Tenant token..." onkeydown="if(event.key==='Enter') saveViewerToken()" style="width: 130px; padding: 4px 8px; font-size: 12px; background: var(--bg-base); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: var(--radius-sm); min-height: 28px;">
             <button type="button" onclick="const inp=document.getElementById('viewerTokenInput'); const isPass=inp.type==='password'; inp.type=isPass?'text':'password'; this.textContent=isPass?'🔒':'👁';" title="Toggle Token Visibility" style="padding: 2px 6px; font-size: 12px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; min-height: 28px;">👁</button>
             <button onclick="saveViewerToken()" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px; min-height: 28px;">Login</button>
-            <button onclick="logoutViewer()" class="btn" style="padding: 4px 8px; font-size: 12px; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); min-height: 28px;">Logout</button>
+            <button onclick="logoutViewer()" class="btn" style="padding: 4px 8px; font-size: 12px; background: rgba(239,68,68,0.12); color: #dc2626; border: 1px solid rgba(239,68,68,0.25); min-height: 28px;">Logout</button>
             <span id="authBadge" class="badge-pill badge-fair" style="font-size: 11px;">Token Required</span>
           </div>
 
@@ -435,8 +443,8 @@
 
           <button onclick="refreshAll()" class="btn btn-secondary" style="min-height: 32px; padding: 4px 12px; font-size: 12px;">↺ Refresh</button>
 
-          <!-- Theme Toggle -->
-          <button class="btn-icon" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Theme" style="min-height: 32px; width: 32px; height: 32px; padding: 0;">🌓</button>
+          <!-- Theme Toggle (defaults to Light Theme) -->
+          <button class="btn-icon" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Theme" style="min-height: 32px; width: 32px; height: 32px; padding: 0;">☀️</button>
 
           <!-- Operator Avatar Capsule -->
           <div class="user-avatar-capsule">
@@ -465,113 +473,303 @@
           <button class="tab-btn" onclick="switchTab('egress')">10. Egress Proof</button>
         </nav>
 
-  <!-- Tab 1: Fleet Overview -->
+  <!-- Tab 1: Executive Dashboard (The 3 Core Features for Jury) -->
   <section id="tab-fleet" class="tab-content active">
-    <div class="grid-4">
-      <div class="tile tile-excellent">
-        <div class="tile-title">EXCELLENT</div>
-        <div class="tile-count" id="countExcellent" style="color: var(--excellent)">0</div>
-        <div class="tile-subtext">Within baseline bounds</div>
+    <!-- Header Hero Banner -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h1 style="font-size: 1.55rem; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); margin: 0;">
+          Predictive Observability & Edge Intelligence
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 13.5px; margin-top: 4px;">
+          Two-tier local-first AIOps architecture with sub-second sliding-window anomaly detection and zero raw credential egress.
+        </p>
       </div>
-      <div class="tile tile-good">
-        <div class="tile-title">GOOD</div>
-        <div class="tile-count" id="countGood" style="color: var(--good)">0</div>
-        <div class="tile-subtext">Minor variance</div>
-      </div>
-      <div class="tile tile-fair">
-        <div class="tile-title">FAIR</div>
-        <div class="tile-count" id="countFair" style="color: var(--fair)">0</div>
-        <div class="tile-subtext">Elevated / Stale 30-59s</div>
-      </div>
-      <div class="tile tile-poor">
-        <div class="tile-title">POOR</div>
-        <div class="tile-count" id="countPoor" style="color: var(--poor)">0</div>
-        <div class="tile-subtext">Breached / Stale >=60s</div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="badge-pill badge-excellent" style="font-size: 12px; padding: 5px 12px;">
+          <span class="live-pulse-dot"></span>LIVE STREAM ACTIVE
+        </span>
+        <button onclick="toggleSidebar()" class="drawer-toggle-btn" style="padding: 5px 12px; font-size: 12px;">
+          <span>☰</span> All Modules (10) <span style="opacity: 0.6;">⋮</span>
+        </button>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Registered Edge Collectors <span id="collectorSummary" style="font-size: 13px; color: var(--muted)"></span></h2>
-      <div class="table-responsive">
-        <table id="collectorsTable">
-          <thead>
-            <tr>
-              <th>Collector ID</th>
-              <th>Status</th>
-              <th>Last Heartbeat</th>
-              <th>Version</th>
-              <th>CPU</th>
-              <th>Memory</th>
-              <th>Queue Depth</th>
-              <th>Config Hash</th>
-            </tr>
-          </thead>
-          <tbody id="collectorsBody">
-            <tr><td colspan="8" style="text-align: center; color: var(--muted);">Loading collectors...</td></tr>
-          </tbody>
-        </table>
+    <!-- ────────────────────────────────────────────────────────── -->
+    <!-- 1. FLEET OVERVIEW: WHAT IS FLEET OVERVIEW?                 -->
+    <!-- ────────────────────────────────────────────────────────── -->
+    <div class="card" style="margin-bottom: 28px; border-left: 4px solid var(--primary);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span class="badge-pill badge-good" style="font-size: 11px;">1. OVERVIEW</span>
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+              What is Fleet Overview?
+            </h2>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 13.5px; line-height: 1.6; max-width: 900px;">
+            <strong>Fleet Overview</strong> provides continuous real-time health aggregation of all monitored edge nodes and devices across multi-tenant boundaries. It evaluates sub-second metrics against dynamic EWMA thresholds and staleness deadlines, automatically categorizing each entity into <strong>4 discrete health states</strong>:
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-surface-elevated); padding: 8px 14px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">E2E Latency:</span>
+          <span id="latencyDisplay" class="latency-pill">no data</span>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Updated:</span>
+          <span id="lastUpdateTime" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); font-weight: 600;">-</span>
+        </div>
+      </div>
+
+      <!-- Live 4-State Health Counters -->
+      <div class="grid-4" style="margin-bottom: 0;">
+        <div class="tile tile-excellent">
+          <div class="tile-title">EXCELLENT</div>
+          <div class="tile-count" id="countExcellent" style="color: var(--color-excellent)">0</div>
+          <div class="tile-subtext">Within baseline bounds (0-75% capacity)</div>
+        </div>
+        <div class="tile tile-good">
+          <div class="tile-title">GOOD</div>
+          <div class="tile-count" id="countGood" style="color: var(--color-good)">0</div>
+          <div class="tile-subtext">Minor variance (75-89% threshold range)</div>
+        </div>
+        <div class="tile tile-fair">
+          <div class="tile-title">FAIR</div>
+          <div class="tile-count" id="countFair" style="color: var(--color-fair)">0</div>
+          <div class="tile-subtext">Elevated stress / Stale telemetry 30-59s</div>
+        </div>
+        <div class="tile tile-poor">
+          <div class="tile-title">POOR</div>
+          <div class="tile-count" id="countPoor" style="color: var(--color-poor)">0</div>
+          <div class="tile-subtext">Threshold breached / Offline ≥60s</div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Monitored Entity Health States</h2>
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Entity ID</th>
-              <th>State</th>
-              <th>Transition Reason</th>
-              <th>Updated</th>
-            </tr>
-          </thead>
-          <tbody id="entityHealthBody">
-            <tr><td colspan="4" style="text-align: center; color: var(--muted);">Loading health states...</td></tr>
-          </tbody>
-        </table>
+    <!-- ────────────────────────────────────────────────────────── -->
+    <!-- 2. INFRASTRUCTURE WITH THIS SYSTEM REAL DATA               -->
+    <!-- ────────────────────────────────────────────────────────── -->
+    <div style="margin-bottom: 28px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge-pill badge-good" style="font-size: 11px;">2. INFRASTRUCTURE</span>
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.3px; color: var(--text-primary);">
+              Infrastructure Telemetry (System Real Data)
+            </h2>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">
+            Live time-series streaming directly from edge collector daemon and host OS. Evaluated against EWMA dynamic baselines.
+          </p>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+          <span class="badge-pill badge-excellent" style="font-size: 11px;"><span class="live-pulse-dot"></span>Real Data Plotting</span>
+          <span class="badge-pill badge-good" style="font-size: 11px;">5s Interval / SSE Stream</span>
+        </div>
+      </div>
+
+      <!-- Core Real-Time Graphs Grid -->
+      <div class="grid-2">
+        <div class="card" style="margin-bottom: 0;">
+          <h2>CPU Utilization (%) <span style="font-size: 12px; color: var(--text-muted)">Baseline band shaded, anomalies dotted</span></h2>
+          <div class="chart-container"><canvas id="chartCpu"></canvas></div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <h2>Memory Utilization (%) <span style="font-size: 12px; color: var(--text-muted)">Baseline band shaded</span></h2>
+          <div class="chart-container"><canvas id="chartMem"></canvas></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 20px;">
+        <div class="card" style="margin-bottom: 0;">
+          <h2>Round-Trip Latency (ms) <span style="font-size: 12px; color: var(--text-muted)">EWMA baseline & spike markers</span></h2>
+          <div class="chart-container"><canvas id="chartLatency"></canvas></div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <h2>Packet Loss (%) <span style="font-size: 12px; color: var(--text-muted)">Congestion detection</span></h2>
+          <div class="chart-container"><canvas id="chartPacketLoss"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px; margin-bottom: 0;">
+        <h2>Disk Usage Headroom (%) <span style="font-size: 12px; color: var(--text-muted)">Storage capacity & growth projection</span></h2>
+        <div class="chart-container"><canvas id="chartDisk"></canvas></div>
+      </div>
+
+      <!-- Extended Network Capacity (Bandwidth & Connectivity) -->
+      <div class="grid-2" style="margin-top: 20px;">
+        <div class="card" style="margin-bottom: 0;">
+          <h2>Bandwidth Throughput (Mbps)</h2>
+          <div class="chart-container"><canvas id="chartBandwidth"></canvas></div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <h2>Network Connectivity (%)</h2>
+          <div class="chart-container"><canvas id="chartConnectivity"></canvas></div>
+        </div>
       </div>
     </div>
+
+    <!-- ────────────────────────────────────────────────────────── -->
+    <!-- 3. TWO-TIER PRIVACY-PRESERVING ARCHITECTURE DIAGRAM        -->
+    <!-- ────────────────────────────────────────────────────────── -->
+    <section class="arch-diagram-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="badge-pill badge-good" style="font-size: 11px;">3. ARCHITECTURE</span>
+            <h3 style="margin: 0; font-size: 15px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase;" class="gradient-text">
+              Two-Tier Local-First Privacy Architecture
+            </h3>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 12.5px; margin-top: 4px;">
+            Physical boundary isolation: raw credentials stay on the edge device; central SaaS receives exclusively allow-listed metadata.
+          </p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span class="badge-pill badge-excellent">100% Scrubbed</span>
+          <span class="badge-pill badge-good">SHA-256 Non-Repudiation</span>
+        </div>
+      </div>
+
+      <div class="arch-tiers-grid">
+        <!-- Tier 1: Client / Edge Host Presentation & Collection -->
+        <div class="tier-box">
+          <div class="tier-header">
+            <span class="tier-title" style="color: #0284c7;">Tier 1 · Edge Presentation & Collector</span>
+            <span class="badge-pill badge-fair" style="font-size: 10px;">LOCAL BOUNDARY</span>
+          </div>
+          <div class="tier-components">
+            <div class="tier-chip">
+              <span style="color: #0284c7;">●</span> Edge Collector Daemon (Python / AsyncIO)
+            </div>
+            <div class="tier-chip">
+              <span style="color: #059669;">●</span> Privacy Redaction Engine (13 Regex Patterns)
+            </div>
+            <div class="tier-chip">
+              <span style="color: #d97706;">●</span> Local SQLite WAL (/data/collector.db)
+            </div>
+            <div class="tier-chip">
+              <span style="color: #4f46e5;">●</span> Allow-List Contract Enforcement (allow-list.yaml)
+            </div>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
+            Raw logs, passwords, JWT tokens, and private IPs are physically captured and scrubbed on-device. Zero unredacted credentials ever touch the network wire.
+          </p>
+        </div>
+
+        <!-- Flow Connector: WAN Ingest Bridge -->
+        <div class="flow-connector">
+          <div class="flow-pill">WAN INGEST WIRE</div>
+          <div class="flow-arrow-animated">➔ ➔ ➔</div>
+          <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px;">
+            HTTPS / TLS 1.3
+          </div>
+          <div style="font-size: 10.5px; color: #059669; font-weight: 700;">
+            Metadata Only (UUIDv7)
+          </div>
+          <div class="flow-arrow-animated" style="animation-direction: reverse; font-size: 14px; color: var(--text-muted); margin-top: 4px;">
+            ⬅ SaaS ACK Hash
+          </div>
+        </div>
+
+        <!-- Tier 2: Server + Data Central SaaS Intelligence -->
+        <div class="tier-box">
+          <div class="tier-header">
+            <span class="tier-title" style="color: #4f46e5;">Tier 2 · Central SaaS & Data Tier</span>
+            <span class="badge-pill badge-good" style="font-size: 10px;">CENTRAL SAAS CLOUD</span>
+          </div>
+          <div class="tier-components">
+            <div class="tier-chip">
+              <span style="color: #0284c7;">●</span> FastAPI Ingest & SSE Streaming API
+            </div>
+            <div class="tier-chip">
+              <span style="color: #059669;">●</span> Sliding-Window AIOps Correlation Engine
+            </div>
+            <div class="tier-chip">
+              <span style="color: #d97706;">●</span> Isolated Tenant Storage (/data/saas_{tenant}.db)
+            </div>
+            <div class="tier-chip">
+              <span style="color: #4f46e5;">●</span> Governed Remediation State Machine (Policy Gate)
+            </div>
+          </div>
+          <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
+            Receives allow-listed metadata, validates cryptographic SHA-256 digests, and generates explainable root-cause recommendations without storing customer secrets.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ────────────────────────────────────────────────────────── -->
+    <!-- DETAILED AUDIT MATRICES (COLLAPSIBLE - PRESERVES TEST IDS) -->
+    <!-- ────────────────────────────────────────────────────────── -->
+    <details style="margin-top: 24px; border: 1px solid var(--border-subtle); border-radius: var(--radius-xl); padding: 18px; background: var(--bg-surface); box-shadow: var(--shadow-sm);">
+      <summary style="cursor: pointer; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; font-size: 13.5px;">
+        <span>📋 Detailed Collector & Entity Matrices (Audit View)</span>
+        <span class="badge-pill badge-good">Click to expand</span>
+      </summary>
+      <div style="margin-top: 18px;">
+        <div class="card" style="margin-bottom: 20px;">
+          <h2>Registered Edge Collectors <span id="collectorSummary" style="font-size: 13px; color: var(--muted)"></span></h2>
+          <div class="table-responsive">
+            <table id="collectorsTable">
+              <thead>
+                <tr>
+                  <th>Collector ID</th>
+                  <th>Status</th>
+                  <th>Last Heartbeat</th>
+                  <th>Version</th>
+                  <th>CPU</th>
+                  <th>Memory</th>
+                  <th>Queue Depth</th>
+                  <th>Config Hash</th>
+                </tr>
+              </thead>
+              <tbody id="collectorsBody">
+                <tr><td colspan="8" style="text-align: center; color: var(--muted);">Loading collectors...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0;">
+          <h2>Monitored Entity Health States</h2>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Entity ID</th>
+                  <th>State</th>
+                  <th>Transition Reason</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody id="entityHealthBody">
+                <tr><td colspan="4" style="text-align: center; color: var(--muted);">Loading health states...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </details>
   </section>
 
-  <!-- Tab 2: Infrastructure -->
+  <!-- Tab 2: Infrastructure Navigation Mirror -->
   <section id="tab-infra" class="tab-content">
-    <div class="grid-2">
-      <div class="card">
-        <h2>CPU Utilization (%) <span style="font-size: 12px; color: var(--muted)">Baseline band shaded, anomalies dotted</span></h2>
-        <div class="chart-container"><canvas id="chartCpu"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Memory Utilization (%) <span style="font-size: 12px; color: var(--muted)">Baseline band shaded</span></h2>
-        <div class="chart-container"><canvas id="chartMem"></canvas></div>
-      </div>
-    </div>
-    <div class="card">
-      <h2>Disk Usage (%) <span style="font-size: 12px; color: var(--muted)">Storage growth & capacity headroom</span></h2>
-      <div class="chart-container"><canvas id="chartDisk"></canvas></div>
+    <div class="card" style="text-align: center; padding: 48px 20px;">
+      <h2 style="justify-content: center; font-size: 1.3rem;">⚡ Real-Time Infrastructure Telemetry</h2>
+      <p style="color: var(--text-secondary); margin: 12px auto 24px auto; max-width: 520px; font-size: 14px;">
+        CPU, Memory, and Disk utilization charts are rendered live on the primary Executive Dashboard with sub-second sliding-window anomaly detection and EWMA baselines.
+      </p>
+      <button onclick="switchTab('fleet')" class="btn btn-primary" style="padding: 8px 20px; font-size: 13px;">View Real-Time Graphs on Executive Dashboard</button>
     </div>
   </section>
 
-  <!-- Tab 3: Network -->
+  <!-- Tab 3: Network Navigation Mirror -->
   <section id="tab-network" class="tab-content">
-    <div class="grid-2">
-      <div class="card">
-        <h2>Round-Trip Latency (ms) <span style="font-size: 12px; color: var(--muted)">EWMA baseline & spike markers</span></h2>
-        <div class="chart-container"><canvas id="chartLatency"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Packet Loss (%) <span style="font-size: 12px; color: var(--muted)">Congestion detection</span></h2>
-        <div class="chart-container"><canvas id="chartPacketLoss"></canvas></div>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <h2>Bandwidth (Mbps)</h2>
-        <div class="chart-container"><canvas id="chartBandwidth"></canvas></div>
-      </div>
-      <div class="card">
-        <h2>Network Connectivity (%)</h2>
-        <div class="chart-container"><canvas id="chartConnectivity"></canvas></div>
-      </div>
+    <div class="card" style="text-align: center; padding: 48px 20px;">
+      <h2 style="justify-content: center; font-size: 1.3rem;">📡 Live Network & Congestion Analytics</h2>
+      <p style="color: var(--text-secondary); margin: 12px auto 24px auto; max-width: 520px; font-size: 14px;">
+        Round-Trip Latency, Packet Loss, Bandwidth, and Connectivity charts are actively streaming on the primary Executive Dashboard.
+      </p>
+      <button onclick="switchTab('fleet')" class="btn btn-primary" style="padding: 8px 20px; font-size: 13px;">View Real-Time Graphs on Executive Dashboard</button>
     </div>
   </section>
 
@@ -1101,94 +1299,6 @@
     </div>
   </section>
 
-        <!-- TWO-TIER ARCHITECTURE INTERACTIVE DIAGRAM -->
-        <section class="arch-diagram-card">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px;">
-            <div>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="live-pulse-dot"></span>
-                <h3 style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;" class="gradient-text">
-                  Two-Tier Local-First Architecture
-                </h3>
-              </div>
-              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">
-                Zero raw data egress. Telemetry secrets remain physically isolated on the edge host, transmitting strictly pseudonymized metadata over WAN.
-              </p>
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <span class="badge-pill badge-excellent">100% Redacted</span>
-              <span class="badge-pill badge-good">SHA-256 Non-Repudiation</span>
-            </div>
-          </div>
-
-          <div class="arch-tiers-grid">
-            <!-- Tier 1: Client / Edge Host Presentation & Collection -->
-            <div class="tier-box">
-              <div class="tier-header">
-                <span class="tier-title" style="color: #38bdf8;">Tier 1 · Edge Presentation & Collector</span>
-                <span class="badge-pill badge-fair" style="font-size: 10px;">LOCAL BOUNDARY</span>
-              </div>
-              <div class="tier-components">
-                <div class="tier-chip">
-                  <span style="color: #38bdf8;">●</span> Edge Collector Daemon (Python / AsyncIO)
-                </div>
-                <div class="tier-chip">
-                  <span style="color: #10b981;">●</span> Privacy Redaction Pipeline (13 Regex Patterns)
-                </div>
-                <div class="tier-chip">
-                  <span style="color: #f59e0b;">●</span> Local SQLite WAL (/data/collector.db)
-                </div>
-                <div class="tier-chip">
-                  <span style="color: #818cf8;">●</span> Allow-List Contract Enforcement (allow-list.yaml)
-                </div>
-              </div>
-              <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
-                Raw logs, passwords, JWT tokens, and private IPs are physically captured and scrubbed on-device. Zero unredacted credentials ever touch the network wire.
-              </p>
-            </div>
-
-            <!-- Flow Connector: WAN Ingest Bridge -->
-            <div class="flow-connector">
-              <div class="flow-pill">WAN INGEST WIRE</div>
-              <div class="flow-arrow-animated">➔ ➔ ➔</div>
-              <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px;">
-                HTTPS / TLS 1.3
-              </div>
-              <div style="font-size: 10px; color: #10b981; font-weight: 600;">
-                Metadata Only (UUIDv7)
-              </div>
-              <div class="flow-arrow-animated" style="animation-direction: reverse; font-size: 14px; color: var(--text-muted); margin-top: 4px;">
-                ⬅ SaaS ACK Hash
-              </div>
-            </div>
-
-            <!-- Tier 2: Server + Data Central SaaS Intelligence -->
-            <div class="tier-box">
-              <div class="tier-header">
-                <span class="tier-title" style="color: #818cf8;">Tier 2 · Central SaaS & Data Tier</span>
-                <span class="badge-pill badge-good" style="font-size: 10px;">CENTRAL SAAS CLOUD</span>
-              </div>
-              <div class="tier-components">
-                <div class="tier-chip">
-                  <span style="color: #38bdf8;">●</span> FastAPI Ingest & SSE Streaming API
-                </div>
-                <div class="tier-chip">
-                  <span style="color: #10b981;">●</span> Sliding-Window AIOps Correlation Engine
-                </div>
-                <div class="tier-chip">
-                  <span style="color: #f59e0b;">●</span> Isolated Tenant Storage (/data/saas_{tenant}.db)
-                </div>
-                <div class="tier-chip">
-                  <span style="color: #818cf8;">●</span> Governed Remediation State Machine (Policy Gate)
-                </div>
-              </div>
-              <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
-                Receives allow-listed metadata, validates cryptographic SHA-256 digests, and generates explainable root-cause recommendations without storing customer secrets.
-              </p>
-            </div>
-          </div>
-        </section>
-
         <!-- Modern Clean Footer -->
         <footer class="app-footer">
           <div>
@@ -1521,22 +1631,22 @@
     }
 
     function toggleTheme() {
-      const current = document.documentElement.getAttribute("data-theme") || "dark";
-      const next = current === "dark" ? "light" : "dark";
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      const next = current === "light" ? "dark" : "light";
       document.documentElement.setAttribute("data-theme", next);
       try {
         localStorage.setItem("sentinel_theme", next);
       } catch (e) {}
       const btn = document.getElementById("themeToggleBtn");
-      if (btn) btn.textContent = next === "dark" ? "🌓" : "☀️";
+      if (btn) btn.textContent = next === "light" ? "☀️" : "🌓";
     }
 
     (function initTheme() {
       try {
-        const saved = localStorage.getItem("sentinel_theme") || "dark";
+        const saved = localStorage.getItem("sentinel_theme") || "light";
         document.documentElement.setAttribute("data-theme", saved);
         const btn = document.getElementById("themeToggleBtn");
-        if (btn) btn.textContent = saved === "dark" ? "🌓" : "☀️";
+        if (btn) btn.textContent = saved === "light" ? "☀️" : "🌓";
       } catch (e) {}
     })();
 
@@ -2846,13 +2956,13 @@
             animation: false,
             scales: {
               x: {
-                ticks: { color: "#64748b", font: { family: "monospace", size: 12 }, maxRotation: 0 },
-                grid: { color: "#1e293b" }
+                ticks: { color: "#64748b", font: { family: "monospace", size: 11 }, maxRotation: 0 },
+                grid: { color: "rgba(148, 163, 184, 0.15)" }
               },
               y: {
                 max: cfg.max,
-                ticks: { color: "#64748b", font: { family: "monospace", size: 12 } },
-                grid: { color: "#1e293b" }
+                ticks: { color: "#64748b", font: { family: "monospace", size: 11 } },
+                grid: { color: "rgba(148, 163, 184, 0.15)" }
               }
             },
             plugins: {
