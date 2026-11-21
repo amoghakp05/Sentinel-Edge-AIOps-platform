@@ -1402,8 +1402,13 @@
 
     // Staleness Detection (Hard Rule: clearly visible indicator when data stops arriving)
     function checkStaleness() {
-      const elapsedMs = Date.now() - lastReceivedTimestamp;
       const indicator = document.getElementById("staleIndicator");
+      if (!indicator) return;
+      if (!getViewerToken()) {
+        indicator.style.display = "none";
+        return;
+      }
+      const elapsedMs = Date.now() - lastReceivedTimestamp;
       if (elapsedMs > 15000) {
         indicator.style.display = "inline-block";
         indicator.innerText = `⚠ TELEMETRY STALE (${Math.round(elapsedMs / 1000)}s without update)`;
