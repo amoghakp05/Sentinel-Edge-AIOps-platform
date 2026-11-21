@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Sentinel Edge // AIOps Platform Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/dashboard/design-tokens.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -22,13 +23,14 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      background: var(--bg);
-      color: var(--text);
-      padding: 16px 0;
-      font-size: 15px;
+      font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+      background: var(--bg-base, var(--bg));
+      color: var(--text-primary, var(--text));
+      padding: 0;
+      font-size: 14.5px;
       line-height: 1.5;
       overflow-x: hidden;
+      min-height: 100vh;
     }
     .app-container {
       max-width: 1400px;
@@ -316,58 +318,152 @@
   </style>
 </head>
 <body>
-  <div class="app-container">
+  <!-- Sidebar Backdrop for Mobile -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
 
-  <header>
-    <div>
-      <h1>SENTINEL<span style="color: var(--primary)">EDGE</span> // AIOps Platform</h1>
-      <small style="color: var(--muted); font-size: 13px;">CICADA 2026 · Real-Time Metadata Ingest & Intelligence Tier</small>
-    </div>
-    <div class="header-controls">
-      <div id="staleIndicator" class="stale-warning">⚠ TELEMETRY STALE (>15s)</div>
-      <div>
-        <label style="color: var(--muted); font-size: 13px;">TENANT:</label>
-        <select id="tenantSelect" onchange="onTenantChanged()">
-          <option value="acme">Acme Corp (EU)</option>
-          <option value="globex">Globex Inc (IN)</option>
-        </select>
+  <div class="app-layout">
+    <!-- Left Collapsible Sidebar -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="navbar-brand">
+          <span style="font-size: 22px;">🛡️</span>
+          <span class="brand-text">SENTINEL<span class="gradient-text">EDGE</span></span>
+        </div>
       </div>
-      <div>
-        <label style="color: var(--muted); font-size: 13px;">TIMEZONE:</label>
-        <select id="tzSelect" onchange="renderAll()">
-          <option value="UTC">UTC (Default)</option>
-          <option value="local">Viewer Local</option>
-          <option value="Europe/Berlin">Europe/Berlin</option>
-          <option value="Asia/Kolkata">Asia/Kolkata</option>
-          <option value="America/New_York">America/New_York</option>
-        </select>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); flex-wrap: wrap;">
-        <label style="color: var(--muted); font-size: 13px;">VIEWER TOKEN:</label>
-        <input type="password" id="viewerTokenInput" placeholder="Paste tenant token..." onkeydown="if(event.key==='Enter') saveViewerToken()" style="width: 170px; padding: 5px 8px; font-size: 13px; background: #0f172a; border: 1px solid var(--border); color: #fff; border-radius: 3px; min-height: 32px;">
-        <button type="button" onclick="const inp=document.getElementById('viewerTokenInput'); const isPass=inp.type==='password'; inp.type=isPass?'text':'password'; this.textContent=isPass?'🔒':'👁';" title="Toggle Token Visibility" style="padding: 4px 8px; font-size: 12px; background: #1e293b; border: 1px solid var(--border); color: #94a3b8; border-radius: 3px; cursor: pointer; min-height: 32px;">👁</button>
-        <button onclick="saveViewerToken()" style="padding: 5px 12px; font-size: 13px; background: var(--primary); color: #000; border: none; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Login</button>
-        <button onclick="logoutViewer()" style="padding: 5px 10px; font-size: 13px; background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Logout</button>
-        <span id="authBadge" class="badge badge-fair">Token Required</span>
-      </div>
-      <span id="sseStatus" class="badge badge-good">Connecting SSE...</span>
-      <button onclick="refreshAll()" class="btn-secondary">↺ Refresh</button>
-    </div>
-  </header>
+      
+      <div class="sidebar-nav">
+        <div class="nav-section-title">Telemetry & Insights</div>
+        <button class="nav-link active" onclick="switchTab('fleet')">
+          <span class="icon">📊</span>
+          <span>1. Fleet Overview</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('infra')">
+          <span class="icon">⚡</span>
+          <span>2. Infrastructure</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('network')">
+          <span class="icon">📡</span>
+          <span>3. Network</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('security')">
+          <span class="icon">🔒</span>
+          <span>4. Security</span>
+        </button>
 
-  <!-- Navigation Tabs -->
-  <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('fleet')">1. Fleet Overview</button>
-    <button class="tab-btn" onclick="switchTab('infra')">2. Infrastructure</button>
-    <button class="tab-btn" onclick="switchTab('network')">3. Network</button>
-    <button class="tab-btn" onclick="switchTab('security')">4. Security</button>
-    <button class="tab-btn" onclick="switchTab('incidents')">5. Incidents & Why?</button>
-    <button class="tab-btn" onclick="switchTab('history')">6. Health History</button>
-    <button class="tab-btn" onclick="switchTab('remediation')">7. Governed Remediation</button>
-    <button class="tab-btn" onclick="switchTab('settings')">8. Settings</button>
-    <button class="tab-btn" onclick="switchTab('chaos')">9. Chaos Injector</button>
-    <button class="tab-btn" onclick="switchTab('egress')">10. Egress Proof</button>
-  </nav>
+        <div class="nav-section-title">AIOps & Root Cause</div>
+        <button class="nav-link" onclick="switchTab('incidents')">
+          <span class="icon">🚨</span>
+          <span>5. Incidents & Why?</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('history')">
+          <span class="icon">⏳</span>
+          <span>6. Health History</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('remediation')">
+          <span class="icon">🛠️</span>
+          <span>7. Governed Remediation</span>
+        </button>
+
+        <div class="nav-section-title">Operations & Audit</div>
+        <button class="nav-link" onclick="switchTab('settings')">
+          <span class="icon">🎛️</span>
+          <span>8. Settings</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('chaos')">
+          <span class="icon">🧪</span>
+          <span>9. Chaos Injector</span>
+        </button>
+        <button class="nav-link" onclick="switchTab('egress')">
+          <span class="icon">🔐</span>
+          <span>10. Egress Proof</span>
+        </button>
+      </div>
+
+      <!-- Sidebar Footer Status -->
+      <div style="padding: 16px; border-top: 1px solid var(--border-subtle); font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
+        <span style="display: flex; align-items: center; gap: 6px;">
+          <span class="live-pulse-dot"></span>
+          <span>AIOps Core v2.4</span>
+        </span>
+        <span class="badge-pill badge-good" style="font-size: 10px; padding: 2px 6px;">LOCAL-FIRST</span>
+      </div>
+    </aside>
+
+    <!-- Main Content Area Wrapper -->
+    <div class="main-wrapper">
+      <!-- Sticky SaaS Navbar -->
+      <header class="app-navbar">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle navigation menu">☰</button>
+          <div class="navbar-brand" style="display: none;" id="mobileBrand">
+            <span class="brand-text">SENTINEL<span class="gradient-text">EDGE</span></span>
+          </div>
+          <div id="staleIndicator" class="stale-warning">⚠ TELEMETRY STALE (>15s)</div>
+        </div>
+
+        <div class="navbar-controls">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="color: var(--text-muted); font-size: 11.5px; font-weight: 600;">TENANT:</label>
+            <select id="tenantSelect" onchange="onTenantChanged()" style="min-height: 32px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 12.5px;">
+              <option value="acme">Acme Corp (EU)</option>
+              <option value="globex">Globex Inc (IN)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="color: var(--text-muted); font-size: 11.5px; font-weight: 600;">TZ:</label>
+            <select id="tzSelect" onchange="renderAll()" style="min-height: 32px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 12.5px;">
+              <option value="UTC">UTC (Default)</option>
+              <option value="local">Viewer Local</option>
+              <option value="Europe/Berlin">Europe/Berlin</option>
+              <option value="Asia/Kolkata">Asia/Kolkata</option>
+              <option value="America/New_York">America/New_York</option>
+            </select>
+          </div>
+
+          <!-- Viewer Token Authentication Capsule -->
+          <div style="display: flex; align-items: center; gap: 6px; background: var(--bg-surface-elevated); padding: 4px 8px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); flex-wrap: wrap;">
+            <label style="color: var(--text-muted); font-size: 11.5px; font-weight: 600;">VIEWER TOKEN:</label>
+            <input type="password" id="viewerTokenInput" placeholder="Tenant token..." onkeydown="if(event.key==='Enter') saveViewerToken()" style="width: 140px; padding: 4px 8px; font-size: 12px; background: var(--bg-base); border: 1px solid var(--border-subtle); color: var(--text-primary); border-radius: var(--radius-sm); min-height: 28px;">
+            <button type="button" onclick="const inp=document.getElementById('viewerTokenInput'); const isPass=inp.type==='password'; inp.type=isPass?'text':'password'; this.textContent=isPass?'🔒':'👁';" title="Toggle Token Visibility" style="padding: 2px 6px; font-size: 12px; background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; min-height: 28px;">👁</button>
+            <button onclick="saveViewerToken()" class="btn btn-primary" style="padding: 4px 10px; font-size: 12px; min-height: 28px;">Login</button>
+            <button onclick="logoutViewer()" class="btn" style="padding: 4px 8px; font-size: 12px; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); min-height: 28px;">Logout</button>
+            <span id="authBadge" class="badge-pill badge-fair" style="font-size: 11px;">Token Required</span>
+          </div>
+
+          <span id="sseStatus" class="badge-pill badge-good" style="font-size: 11px;">Connecting SSE...</span>
+
+          <button onclick="refreshAll()" class="btn btn-secondary" style="min-height: 32px; padding: 4px 12px; font-size: 12px;">↺ Refresh</button>
+
+          <!-- Theme Toggle -->
+          <button class="btn-icon" onclick="toggleTheme()" id="themeToggleBtn" title="Toggle Light/Dark Theme" style="min-height: 32px; width: 32px; height: 32px; padding: 0;">🌓</button>
+
+          <!-- Operator Avatar Capsule -->
+          <div class="user-avatar-capsule">
+            <div class="user-avatar-circle">OP</div>
+            <div class="user-avatar-meta">
+              <span class="user-avatar-name">Site Reliability</span>
+              <span class="user-avatar-role">operator</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- App Content Container -->
+      <main class="app-content">
+        <!-- Hidden tab-btn group to ensure 100% backward compatibility with all JS and selectors -->
+        <nav class="nav-tabs" style="display: none;">
+          <button class="tab-btn active" onclick="switchTab('fleet')">1. Fleet Overview</button>
+          <button class="tab-btn" onclick="switchTab('infra')">2. Infrastructure</button>
+          <button class="tab-btn" onclick="switchTab('network')">3. Network</button>
+          <button class="tab-btn" onclick="switchTab('security')">4. Security</button>
+          <button class="tab-btn" onclick="switchTab('incidents')">5. Incidents & Why?</button>
+          <button class="tab-btn" onclick="switchTab('history')">6. Health History</button>
+          <button class="tab-btn" onclick="switchTab('remediation')">7. Governed Remediation</button>
+          <button class="tab-btn" onclick="switchTab('settings')">8. Settings</button>
+          <button class="tab-btn" onclick="switchTab('chaos')">9. Chaos Injector</button>
+          <button class="tab-btn" onclick="switchTab('egress')">10. Egress Proof</button>
+        </nav>
 
   <!-- Tab 1: Fleet Overview -->
   <section id="tab-fleet" class="tab-content active">
@@ -1005,20 +1101,109 @@
     </div>
   </section>
 
-  <!-- Footer with Live Latency Calculation -->
-  <footer>
-    <div>
-      SENTINEL EDGE AIOps · <span id="regionLabel">Region: EU</span> · Multi-tenant Tenant Scoped
-    </div>
-    <div>
-      Collection-to-Dashboard Latency:
-      <span id="latencyDisplay" class="latency-pill">no data</span>
-    </div>
-    <div>
-      Last Update: <span id="lastUpdateTime">-</span>
-    </div>
-  </footer>
+        <!-- TWO-TIER ARCHITECTURE INTERACTIVE DIAGRAM -->
+        <section class="arch-diagram-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 16px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="live-pulse-dot"></span>
+                <h3 style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;" class="gradient-text">
+                  Two-Tier Local-First Architecture
+                </h3>
+              </div>
+              <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">
+                Zero raw data egress. Telemetry secrets remain physically isolated on the edge host, transmitting strictly pseudonymized metadata over WAN.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <span class="badge-pill badge-excellent">100% Redacted</span>
+              <span class="badge-pill badge-good">SHA-256 Non-Repudiation</span>
+            </div>
+          </div>
 
+          <div class="arch-tiers-grid">
+            <!-- Tier 1: Client / Edge Host Presentation & Collection -->
+            <div class="tier-box">
+              <div class="tier-header">
+                <span class="tier-title" style="color: #38bdf8;">Tier 1 · Edge Presentation & Collector</span>
+                <span class="badge-pill badge-fair" style="font-size: 10px;">LOCAL BOUNDARY</span>
+              </div>
+              <div class="tier-components">
+                <div class="tier-chip">
+                  <span style="color: #38bdf8;">●</span> Edge Collector Daemon (Python / AsyncIO)
+                </div>
+                <div class="tier-chip">
+                  <span style="color: #10b981;">●</span> Privacy Redaction Pipeline (13 Regex Patterns)
+                </div>
+                <div class="tier-chip">
+                  <span style="color: #f59e0b;">●</span> Local SQLite WAL (/data/collector.db)
+                </div>
+                <div class="tier-chip">
+                  <span style="color: #818cf8;">●</span> Allow-List Contract Enforcement (allow-list.yaml)
+                </div>
+              </div>
+              <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
+                Raw logs, passwords, JWT tokens, and private IPs are physically captured and scrubbed on-device. Zero unredacted credentials ever touch the network wire.
+              </p>
+            </div>
+
+            <!-- Flow Connector: WAN Ingest Bridge -->
+            <div class="flow-connector">
+              <div class="flow-pill">WAN INGEST WIRE</div>
+              <div class="flow-arrow-animated">➔ ➔ ➔</div>
+              <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px;">
+                HTTPS / TLS 1.3
+              </div>
+              <div style="font-size: 10px; color: #10b981; font-weight: 600;">
+                Metadata Only (UUIDv7)
+              </div>
+              <div class="flow-arrow-animated" style="animation-direction: reverse; font-size: 14px; color: var(--text-muted); margin-top: 4px;">
+                ⬅ SaaS ACK Hash
+              </div>
+            </div>
+
+            <!-- Tier 2: Server + Data Central SaaS Intelligence -->
+            <div class="tier-box">
+              <div class="tier-header">
+                <span class="tier-title" style="color: #818cf8;">Tier 2 · Central SaaS & Data Tier</span>
+                <span class="badge-pill badge-good" style="font-size: 10px;">CENTRAL SAAS CLOUD</span>
+              </div>
+              <div class="tier-components">
+                <div class="tier-chip">
+                  <span style="color: #38bdf8;">●</span> FastAPI Ingest & SSE Streaming API
+                </div>
+                <div class="tier-chip">
+                  <span style="color: #10b981;">●</span> Sliding-Window AIOps Correlation Engine
+                </div>
+                <div class="tier-chip">
+                  <span style="color: #f59e0b;">●</span> Isolated Tenant Storage (/data/saas_{tenant}.db)
+                </div>
+                <div class="tier-chip">
+                  <span style="color: #818cf8;">●</span> Governed Remediation State Machine (Policy Gate)
+                </div>
+              </div>
+              <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
+                Receives allow-listed metadata, validates cryptographic SHA-256 digests, and generates explainable root-cause recommendations without storing customer secrets.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Modern Clean Footer -->
+        <footer class="app-footer">
+          <div>
+            <strong>SENTINEL EDGE</strong> AIOps Platform · <span id="regionLabel">Region: EU</span> · Multi-tenant Tenant Scoped
+          </div>
+          <div>
+            Collection-to-Dashboard Latency:
+            <span id="latencyDisplay" class="latency-pill">no data</span>
+          </div>
+          <div>
+            Last Update: <span id="lastUpdateTime">-</span>
+          </div>
+        </footer>
+      </main>
+    </div>
   </div>
 
   <!-- Why? Drawer -->
@@ -1328,8 +1513,41 @@
       return formatTime(isoStr);
     }
 
+    function toggleSidebar() {
+      const sidebar = document.getElementById("appSidebar");
+      const backdrop = document.getElementById("sidebarBackdrop");
+      if (sidebar) sidebar.classList.toggle("open");
+      if (backdrop) backdrop.classList.toggle("active");
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "dark";
+      const next = current === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try {
+        localStorage.setItem("sentinel_theme", next);
+      } catch (e) {}
+      const btn = document.getElementById("themeToggleBtn");
+      if (btn) btn.textContent = next === "dark" ? "🌓" : "☀️";
+    }
+
+    (function initTheme() {
+      try {
+        const saved = localStorage.getItem("sentinel_theme") || "dark";
+        document.documentElement.setAttribute("data-theme", saved);
+        const btn = document.getElementById("themeToggleBtn");
+        if (btn) btn.textContent = saved === "dark" ? "🌓" : "☀️";
+      } catch (e) {}
+    })();
+
     function switchTab(tabId, ev) {
       document.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.remove("active");
+        if (b.getAttribute("onclick") && b.getAttribute("onclick").includes(`'${tabId}'`)) {
+          b.classList.add("active");
+        }
+      });
+      document.querySelectorAll(".nav-link").forEach(b => {
         b.classList.remove("active");
         if (b.getAttribute("onclick") && b.getAttribute("onclick").includes(`'${tabId}'`)) {
           b.classList.add("active");
@@ -1346,6 +1564,12 @@
       }
       if (tabId === "egress") {
         loadEgressRecords();
+      }
+      const sidebar = document.getElementById("appSidebar");
+      const backdrop = document.getElementById("sidebarBackdrop");
+      if (sidebar && sidebar.classList.contains("open")) {
+        sidebar.classList.remove("open");
+        if (backdrop) backdrop.classList.remove("active");
       }
     }
 
