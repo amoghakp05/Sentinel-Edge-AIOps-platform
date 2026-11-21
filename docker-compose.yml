@@ -1,0 +1,163 @@
+services:
+
+  # ── Telemetry Simulator ────────────────────────────────────────────────────
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    command: uvicorn tools.sim_stream_server:app --host 0.0.0.0 --port 9000
+    ports:
+      - "9000:9000"
+    networks:
+      - aiops-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── SaaS — EU region (tenant: acme) ───────────────────────────────────────
+  saas-eu:
+    build:
+      context: .
+      dockerfile: Dockerfile.saas
+    command: uvicorn saas.main:app --host 0.0.0.0 --port 8001 --no-access-log
+    ports:
+      - "8001:8001"
+    environment:
+      SAAS_REGION: eu-central-1
+      SAAS_DB_PATH: /data/saas_eu.db
+      SAAS_SECRET_KEY: "${SAAS_SECRET_KEY_EU:-changeme-eu}"
+    volumes:
+      - saas-eu-data:/data
+    networks:
+      - aiops-net
+    depends_on:
+      simulator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── SaaS — IN region (tenant: globex) ─────────────────────────────────────
+  saas-in:
+    build:
+      context: .
+      dockerfile: Dockerfile.saas
+    command: uvicorn saas.main:app --host 0.0.0.0 --port 8002 --no-access-log
+    ports:
+      - "8002:8002"
+    environment:
+      SAAS_REGION: ap-south-1
+      SAAS_DB_PATH: /data/saas_in.db
+      SAAS_SECRET_KEY: "${SAAS_SECRET_KEY_IN:-changeme-in}"
+    volumes:
+      - saas-in-data:/data
+    networks:
+      - aiops-net
+    depends_on:
+      simulator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Collector: acme / eu-central-1 / instance 1 ───────────────────────────
+  collector-acme-eu-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    command: python -m collector.cli run
+    environment:
+      COLLECTOR_ID:       col-acme-eu-1
+      COLLECTOR_DB_PATH:  /data/collector.db
+      SAAS_INGEST_URL:    http://saas-eu:8001/ingest
+      SAAS_API_KEY:       "${ACME_EU1_API_KEY:-key-acme-eu1-dev}"
+      HMAC_SECRET:        "${ACME_EU1_HMAC:-hmac-acme-eu1-dev}"
+      SOURCE_TZ:          Europe/Berlin
+      SIM_STREAM_URL:     http://simulator:9000
+      SIM_COLLECTOR_ID:   col-acme-eu-1
+      RAW_RETENTION_HOURS: "24"
+    volumes:
+      - collector-acme-eu-1-data:/data
+    networks:
+      - aiops-net
+    depends_on:
+      saas-eu:
+        condition: service_healthy
+
+  # ── Collector: acme / eu-central-1 / instance 2 ───────────────────────────
+  collector-acme-eu-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    command: python -m collector.cli run
+    environment:
+      COLLECTOR_ID:       col-acme-eu-2
+      COLLECTOR_DB_PATH:  /data/collector.db
+      SAAS_INGEST_URL:    http://saas-eu:8001/ingest
+      SAAS_API_KEY:       "${ACME_EU2_API_KEY:-key-acme-eu2-dev}"
+      HMAC_SECRET:        "${ACME_EU2_HMAC:-hmac-acme-eu2-dev}"
+      SOURCE_TZ:          Europe/London
+      SIM_STREAM_URL:     http://simulator:9000
+      SIM_COLLECTOR_ID:   col-acme-eu-2
+      RAW_RETENTION_HOURS: "24"
+    volumes:
+      - collector-acme-eu-2-data:/data
+    networks:
+      - aiops-net
+    depends_on:
+      saas-eu:
+        condition: service_healthy
+
+  # ── Collector: globex / ap-south-1 / instance 1 ───────────────────────────
+  collector-globex-in-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.collector
+    command: python -m collector.cli run
+    environment:
+      COLLECTOR_ID:       col-globex-in-1
+      COLLECTOR_DB_PATH:  /data/collector.db
+      SAAS_INGEST_URL:    http://saas-in:8002/ingest
+      SAAS_API_KEY:       "${GLOBEX_IN1_API_KEY:-key-globex-in1-dev}"
+      HMAC_SECRET:        "${GLOBEX_IN1_HMAC:-hmac-globex-in1-dev}"
+      SOURCE_TZ:          Asia/Kolkata
+      SIM_STREAM_URL:     http://simulator:9000
+      SIM_COLLECTOR_ID:   col-globex-in-1
+      RAW_RETENTION_HOURS: "24"
+    volumes:
+      - collector-globex-in-1-data:/data
+    networks:
+      - aiops-net
+    depends_on:
+      saas-in:
+        condition: service_healthy
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────
+  dashboard:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    networks:
+      - aiops-net
+    depends_on:
+      - saas-eu
+      - saas-in
+
+networks:
+  aiops-net:
+    driver: bridge
+
+volumes:
+  saas-eu-data:
+  saas-in-data:
+  collector-acme-eu-1-data:
+  collector-acme-eu-2-data:
+  collector-globex-in-1-data:

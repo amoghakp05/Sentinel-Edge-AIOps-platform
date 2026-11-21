@@ -1,0 +1,3 @@
+[console_scripts]
+aiopsctl = saas.cli_aiopsctl:main
+collector = collector.cli:main

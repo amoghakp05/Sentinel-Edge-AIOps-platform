@@ -1,0 +1,94 @@
+# ============================================================
+# C3: Egress Allow-List
+# Any field not listed here is DROPPED before the payload leaves
+# the collector. drop_unknown_fields must remain true.
+# ============================================================
+
+drop_unknown_fields: true
+
+# Every string-type value is scanned for secrets before egress.
+secret_scan_on_all_strings: true
+
+# Hardened patterns that trigger an immediate block (pre-egress).
+secret_patterns:
+  - "(?i)(?:password|passwd|pwd|secret)\\s*[:=]"
+  - "(?i)(?:api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|token)\\s*[:=]"
+  - "(?i)Authorization:"
+  - "(?i)Bearer\\s+"
+  - "\\b(?:AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16}\\b"                    # AWS Access Keys
+  - "-----BEGIN [A-Z\\s]+ PRIVATE KEY-----"                         # Private key blocks
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b"        # Email addresses
+  - "\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b"               # IPv4 addresses
+  - "\\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\\b"               # IPv6 addresses
+  - "\\b(?:[0-9a-fA-F]{1,4}:)*::(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}\\b" # Compressed IPv6
+  - "(?i)\\.(?:internal|corp|local)\\b"                             # Internal infrastructure domains
+  - "\\b[0-9a-fA-F]{32,64}\\b"                                      # Long hex hashes/tokens
+  - "[a-zA-Z][a-zA-Z0-9+.-]*://(?!\\[REDACTED)[^:\\s/@]+:[^@\\s/]+@" # URI credentials
+
+allowed_fields:
+  payload_id:
+    type: string
+    required: true
+    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+
+  schema_version:
+    type: int
+    required: true
+    allowed_values: [1]
+
+  collector_id:
+    type: string
+    required: true
+    max_len: 64
+
+  event_time_utc:
+    type: iso8601_utc
+    required: true
+
+  source_tz:
+    type: string
+    required: true
+    max_len: 64
+
+  sent_time_utc:
+    type: iso8601_utc
+    required: true
+
+  source_ref:
+    type: string
+    required: true
+    pattern: "^h_[0-9a-f]{8}$"
+
+  kind:
+    type: enum
+    required: true
+    values: [metric, health, security_summary, alert, heartbeat]
+
+  category:
+    type: enum
+    required: false
+    values: [cpu, memory, disk, bandwidth, latency,
+             packet_loss, connectivity, auth, service]
+
+  severity:
+    type: enum
+    required: true
+    values: [info, warning, critical]
+
+  value:
+    type: number
+    required: false
+
+  unit:
+    type: string
+    required: false
+    max_len: 16
+
+  window_s:
+    type: int
+    required: false
+
+  context:
+    type: string
+    required: false
+    max_len: 200

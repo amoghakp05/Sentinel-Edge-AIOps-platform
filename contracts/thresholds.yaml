@@ -1,0 +1,73 @@
+# ============================================================
+# Default health thresholds.
+# These are the platform defaults; each tenant can override
+# via the SaaS API (stored in saas.thresholds table).
+# ============================================================
+
+defaults:
+  cpu:
+    unit: percent
+    good_at: 60.0      # below this → Excellent
+    fair_at: 75.0      # at or above → Fair
+    poor_at: 92.0      # at or above → Poor
+    stale_fair_s: 30   # no data for 30 s → Fair
+    stale_poor_s: 60   # no data for 60 s → Poor
+
+  memory:
+    unit: percent
+    good_at: 70.0
+    fair_at: 85.0
+    poor_at: 95.0
+    stale_fair_s: 30
+    stale_poor_s: 60
+
+  disk:
+    unit: percent
+    good_at: 70.0
+    fair_at: 85.0
+    poor_at: 95.0
+    stale_fair_s: 120
+    stale_poor_s: 300
+
+  latency:
+    unit: ms
+    good_at: 80.0
+    fair_at: 150.0
+    poor_at: 400.0
+    stale_fair_s: 30
+    stale_poor_s: 60
+
+  packet_loss:
+    unit: percent
+    good_at: 0.5
+    fair_at: 2.0
+    poor_at: 8.0
+    stale_fair_s: 30
+    stale_poor_s: 60
+
+  bandwidth:
+    unit: mbps
+    # For bandwidth, LOW is bad (inverted threshold).
+    # Thresholds are minimum acceptable values.
+    fair_at: 10.0      # below → Fair
+    poor_at: 1.0       # below → Poor
+    stale_fair_s: 30
+    stale_poor_s: 60
+
+  auth:
+    # Repeated failed logins per minute
+    unit: count_per_min
+    fair_at: 5.0
+    poor_at: 20.0
+    stale_fair_s: 60
+    stale_poor_s: 300
+
+  connectivity:
+    unit: boolean      # 0 = down, 1 = up
+    stale_fair_s: 15
+    stale_poor_s: 60
+
+  service:
+    unit: boolean
+    stale_fair_s: 15
+    stale_poor_s: 60

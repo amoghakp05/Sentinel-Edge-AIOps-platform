@@ -1,0 +1,2954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentinel Edge // AIOps Platform Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #131d31;
+      --panel-alt: #1a263f;
+      --border: #293856;
+      --text: #f1f5f9;
+      --muted: #8b9bb4;
+      --primary: #38bdf8;
+      --excellent: #16a34a;
+      --good: #2563eb;
+      --fair: #d97706;
+      --poor: #dc2626;
+      --stale: #ea580c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px 0;
+      font-size: 15px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    .app-container {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      box-sizing: border-box;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.5px; }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    select, input, button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      outline: none;
+      min-height: 36px;
+      box-sizing: border-box;
+    }
+    select:focus, input:focus { border-color: var(--primary); }
+    button {
+      background: #0284c7;
+      border-color: #0284c7;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button:hover { background: #0369a1; }
+    button.btn-secondary { background: var(--panel-alt); border-color: var(--border); }
+    button.btn-secondary:hover { background: #223252; }
+
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      overflow-x: auto;
+      padding-bottom: 8px;
+      flex-wrap: wrap;
+      -webkit-overflow-scrolling: touch;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 8px 14px;
+      border-radius: 6px;
+      min-height: 40px;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--panel); }
+    .tab-btn.active {
+      color: var(--primary);
+      background: var(--panel);
+      border-color: var(--border);
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+    }
+    .badge-excellent { background: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid var(--excellent); }
+    .badge-good { background: rgba(37, 99, 235, 0.2); color: #60a5fa; border: 1px solid var(--good); }
+    .badge-fair { background: rgba(217, 119, 6, 0.2); color: #fbbf24; border: 1px solid var(--fair); }
+    .badge-poor { background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid var(--poor); }
+    .badge-offline { background: rgba(220, 38, 38, 0.3); color: #fca5a5; border: 1px solid #dc2626; }
+    .badge-active { background: rgba(22, 163, 74, 0.2); color: #86efac; border: 1px solid #16a34a; }
+    .badge-stale { background: rgba(234, 88, 12, 0.25); color: #fdba74; border: 1px solid var(--stale); }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1100px) {
+      .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .grid-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card, .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .card h2, .panel h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card h3, .panel h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    
+    .tile {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      border-left: 4px solid var(--border);
+    }
+    .tile.tile-excellent { border-left-color: var(--excellent); }
+    .tile.tile-good { border-left-color: var(--good); }
+    .tile.tile-fair { border-left-color: var(--fair); }
+    .tile.tile-poor { border-left-color: var(--poor); }
+    .tile-title { font-size: 13px; font-weight: 600; text-transform: uppercase; color: var(--muted); }
+    .tile-count { font-size: 2rem; font-weight: 700; margin: 6px 0; }
+    .tile-subtext { font-size: 12px; color: var(--muted); }
+
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 8px;
+      border-radius: 4px;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+    th { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 12px; background: rgba(0,0,0,0.25); white-space: nowrap; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .stepper-container {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      overflow-x: auto;
+      align-items: center;
+      justify-content: flex-start;
+      background: var(--panel-alt);
+      padding: 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .grid-remediation-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 1024px) {
+      .grid-remediation-split {
+        grid-template-columns: 1fr;
+      }
+    }
+    #mockStateViewer {
+      background: rgba(0,0,0,0.4);
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      overflow: auto;
+      max-height: 300px;
+      color: #38bdf8;
+    }
+
+    .drawer {
+      position: fixed;
+      right: -520px;
+      top: 0;
+      width: 500px;
+      max-width: 95vw;
+      height: 100vh;
+      background: #090e1a;
+      border-left: 2px solid var(--border);
+      padding: 20px;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.7);
+      overflow-y: auto;
+      z-index: 1000;
+      transition: right 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .drawer.open { right: 0; }
+    .drawer-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px; }
+    .close-btn { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+    .close-btn:hover { color: #fff; }
+
+    .progress-bar-bg { width: 100%; height: 8px; background: #223252; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .progress-bar-fill { height: 100%; background: #38bdf8; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 24px;
+      padding-top: 16px;
+      padding-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .latency-pill {
+      background: #172554;
+      border: 1px solid #1e3a8a;
+      color: #93c5fd;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .stale-warning {
+      display: none;
+      background: #7c2d12;
+      border: 1px solid #ea580c;
+      color: #ffedd5;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+  <header>
+    <div>
+      <h1>SENTINEL<span style="color: var(--primary)">EDGE</span> // AIOps Platform</h1>
+      <small style="color: var(--muted); font-size: 13px;">CICADA 2026 · Real-Time Metadata Ingest & Intelligence Tier</small>
+    </div>
+    <div class="header-controls">
+      <div id="staleIndicator" class="stale-warning">⚠ TELEMETRY STALE (>15s)</div>
+      <div>
+        <label style="color: var(--muted); font-size: 13px;">TENANT:</label>
+        <select id="tenantSelect" onchange="onTenantChanged()">
+          <option value="acme">Acme Corp (EU)</option>
+          <option value="globex">Globex Inc (IN)</option>
+        </select>
+      </div>
+      <div>
+        <label style="color: var(--muted); font-size: 13px;">TIMEZONE:</label>
+        <select id="tzSelect" onchange="renderAll()">
+          <option value="UTC">UTC (Default)</option>
+          <option value="local">Viewer Local</option>
+          <option value="Europe/Berlin">Europe/Berlin</option>
+          <option value="Asia/Kolkata">Asia/Kolkata</option>
+          <option value="America/New_York">America/New_York</option>
+        </select>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); flex-wrap: wrap;">
+        <label style="color: var(--muted); font-size: 13px;">VIEWER TOKEN:</label>
+        <input type="password" id="viewerTokenInput" placeholder="Paste tenant token..." style="width: 150px; padding: 5px 8px; font-size: 13px; background: #0f172a; border: 1px solid var(--border); color: #fff; border-radius: 3px; min-height: 32px;">
+        <button onclick="saveViewerToken()" style="padding: 5px 10px; font-size: 13px; background: var(--primary); color: #000; border: none; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Login</button>
+        <button onclick="logoutViewer()" style="padding: 5px 10px; font-size: 13px; background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Logout</button>
+        <span id="authBadge" class="badge badge-fair">Token Required</span>
+      </div>
+      <span id="sseStatus" class="badge badge-good">Connecting SSE...</span>
+      <button onclick="refreshAll()" class="btn-secondary">↺ Refresh</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('fleet')">1. Fleet Overview</button>
+    <button class="tab-btn" onclick="switchTab('infra')">2. Infrastructure</button>
+    <button class="tab-btn" onclick="switchTab('network')">3. Network</button>
+    <button class="tab-btn" onclick="switchTab('security')">4. Security</button>
+    <button class="tab-btn" onclick="switchTab('incidents')">5. Incidents & Why?</button>
+    <button class="tab-btn" onclick="switchTab('history')">6. Health History</button>
+    <button class="tab-btn" onclick="switchTab('remediation')">7. Governed Remediation</button>
+    <button class="tab-btn" onclick="switchTab('settings')">8. Settings</button>
+    <button class="tab-btn" onclick="switchTab('chaos')">9. Chaos Injector</button>
+    <button class="tab-btn" onclick="switchTab('egress')">10. Egress Proof</button>
+  </nav>
+
+  <!-- Tab 1: Fleet Overview -->
+  <section id="tab-fleet" class="tab-content active">
+    <div class="grid-4">
+      <div class="tile tile-excellent">
+        <div class="tile-title">EXCELLENT</div>
+        <div class="tile-count" id="countExcellent" style="color: var(--excellent)">0</div>
+        <div class="tile-subtext">Within baseline bounds</div>
+      </div>
+      <div class="tile tile-good">
+        <div class="tile-title">GOOD</div>
+        <div class="tile-count" id="countGood" style="color: var(--good)">0</div>
+        <div class="tile-subtext">Minor variance</div>
+      </div>
+      <div class="tile tile-fair">
+        <div class="tile-title">FAIR</div>
+        <div class="tile-count" id="countFair" style="color: var(--fair)">0</div>
+        <div class="tile-subtext">Elevated / Stale 30-59s</div>
+      </div>
+      <div class="tile tile-poor">
+        <div class="tile-title">POOR</div>
+        <div class="tile-count" id="countPoor" style="color: var(--poor)">0</div>
+        <div class="tile-subtext">Breached / Stale >=60s</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Registered Edge Collectors <span id="collectorSummary" style="font-size: 13px; color: var(--muted)"></span></h2>
+      <div class="table-responsive">
+        <table id="collectorsTable">
+          <thead>
+            <tr>
+              <th>Collector ID</th>
+              <th>Status</th>
+              <th>Last Heartbeat</th>
+              <th>Version</th>
+              <th>CPU</th>
+              <th>Memory</th>
+              <th>Queue Depth</th>
+              <th>Config Hash</th>
+            </tr>
+          </thead>
+          <tbody id="collectorsBody">
+            <tr><td colspan="8" style="text-align: center; color: var(--muted);">Loading collectors...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Monitored Entity Health States</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Entity ID</th>
+              <th>State</th>
+              <th>Transition Reason</th>
+              <th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="entityHealthBody">
+            <tr><td colspan="4" style="text-align: center; color: var(--muted);">Loading health states...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 2: Infrastructure -->
+  <section id="tab-infra" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>CPU Utilization (%) <span style="font-size: 12px; color: var(--muted)">Baseline band shaded, anomalies dotted</span></h2>
+        <div class="chart-container"><canvas id="chartCpu"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Memory Utilization (%) <span style="font-size: 12px; color: var(--muted)">Baseline band shaded</span></h2>
+        <div class="chart-container"><canvas id="chartMem"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Disk Usage (%) <span style="font-size: 12px; color: var(--muted)">Storage growth & capacity headroom</span></h2>
+      <div class="chart-container"><canvas id="chartDisk"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Tab 3: Network -->
+  <section id="tab-network" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h2>Round-Trip Latency (ms) <span style="font-size: 12px; color: var(--muted)">EWMA baseline & spike markers</span></h2>
+        <div class="chart-container"><canvas id="chartLatency"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Packet Loss (%) <span style="font-size: 12px; color: var(--muted)">Congestion detection</span></h2>
+        <div class="chart-container"><canvas id="chartPacketLoss"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Bandwidth (Mbps)</h2>
+        <div class="chart-container"><canvas id="chartBandwidth"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Network Connectivity (%)</h2>
+        <div class="chart-container"><canvas id="chartConnectivity"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 4: Security -->
+  <section id="tab-security" class="tab-content">
+    <div class="grid-4">
+      <div class="tile">
+        <div class="tile-title">FAILED LOGINS (LAST 5M)</div>
+        <div class="tile-count" id="secFailedCount" style="color: var(--primary)">0</div>
+        <div class="tile-subtext">Aggregated count per window</div>
+      </div>
+      <div class="tile">
+        <div class="tile-title">CURRENT RISK SCORE</div>
+        <div class="tile-count" id="secRiskScore" style="color: var(--good)">0 / 100</div>
+        <div class="tile-subtext">Heuristic threshold: &gt;75 alerts</div>
+      </div>
+      <div class="tile">
+        <div class="tile-title">REDACTION AUDIT</div>
+        <div class="tile-count" style="color: var(--excellent)">100%</div>
+        <div class="tile-subtext">Zero raw secrets / IPs egressed</div>
+      </div>
+      <div class="tile">
+        <div class="tile-title">SECURITY ALERTS</div>
+        <div class="tile-count" id="secAlertCount" style="color: var(--fair)">0</div>
+        <div class="tile-subtext">Active security summaries</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Local Redacted Security Summaries <span style="font-size: 12px; color: var(--muted)">Strictly metadata-only</span></h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Event ID</th>
+              <th>Category</th>
+              <th>Severity</th>
+              <th>Context (Safe Redacted Summary)</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="securityEventsBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--muted);">Loading security events...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 5: Incidents & Why? Drawer -->
+  <section id="tab-incidents" class="tab-content">
+    <div class="card">
+      <h2>Correlated Incidents (AIOps Sliding-Window Engine)</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Incident ID</th>
+              <th>Severity</th>
+              <th>Summary / Title</th>
+              <th>Root Cause Candidate</th>
+              <th>Alert Reduction</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="incidentsBody">
+            <tr><td colspan="7" style="text-align: center; color: var(--muted);">Loading incidents...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 6: Health History -->
+  <section id="tab-history" class="tab-content">
+    <div class="card">
+      <h2>State Transition Audit Trail (UTC Recorded)</h2>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Entity ID</th>
+              <th>From State</th>
+              <th>To State</th>
+              <th>Transition Reason</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="5" style="text-align: center; color: var(--muted);">Loading history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 7: Governed Remediation (Phase 10) -->
+  <section id="tab-remediation" class="tab-content">
+    <!-- State Machine Visualizer Stepper -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <h2>Governed Remediation State Machine</h2>
+        <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid var(--primary);">
+          Active Invariants: Policy Checked • Operator Role • Mock Only • Pre-Stored Rollback
+        </span>
+      </div>
+      <p style="color: var(--muted); margin-bottom: 16px; font-size: 14px;">
+        Human-in-the-loop remediation lifecycle. All actions are validated against <code>contracts/remediation_policy.yaml</code>, require role <strong>operator</strong> to approve, store a verified rollback plan prior to execution, and execute in a simulated sandbox.
+      </p>
+      
+      <div class="stepper-container">
+        <div class="step-box" id="step-proposed" style="flex: 1; min-width: 120px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">STEP 1</div>
+          <div style="font-weight: 700; color: #38bdf8; font-size: 13px;">Proposed</div>
+          <div style="font-size: 12px; color: var(--muted);">Recommendation</div>
+        </div>
+        <div style="color: var(--muted); font-size: 16px;">➔</div>
+
+        <div class="step-box" id="step-policy" style="flex: 1; min-width: 130px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">STEP 2</div>
+          <div style="font-weight: 700; color: #f59e0b; font-size: 13px;">Policy Check</div>
+          <div style="font-size: 12px; color: var(--muted);">Allow-list & Scope</div>
+        </div>
+        <div style="color: var(--muted); font-size: 16px;">➔</div>
+
+        <div class="step-box" id="step-awaiting" style="flex: 1; min-width: 140px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">STEP 3</div>
+          <div style="font-weight: 700; color: #eab308; font-size: 13px;">Awaiting Approval</div>
+          <div style="font-size: 12px; color: var(--muted);">Role: operator</div>
+        </div>
+        <div style="color: var(--muted); font-size: 16px;">➔</div>
+
+        <div class="step-box" id="step-approved" style="flex: 1; min-width: 130px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">STEP 4</div>
+          <div style="font-weight: 700; color: #22c55e; font-size: 13px;">Approved</div>
+          <div style="font-size: 12px; color: var(--muted);">Pre-Stored Snapshot</div>
+        </div>
+        <div style="color: var(--muted); font-size: 16px;">➔</div>
+
+        <div class="step-box" id="step-executed" style="flex: 1; min-width: 140px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">STEP 5</div>
+          <div style="font-weight: 700; color: #10b981; font-size: 13px;">Simulated Execution</div>
+          <div style="font-size: 12px; color: var(--muted);">Mock Registry Only</div>
+        </div>
+        <div style="color: var(--muted); font-size: 16px;">➔</div>
+
+        <div class="step-box" id="step-audit" style="flex: 1; min-width: 120px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">STEP 6</div>
+          <div style="font-weight: 700; color: #a855f7; font-size: 13px;">Audit Logged</div>
+          <div style="font-size: 12px; color: var(--muted);">Immutable UTC Trail</div>
+        </div>
+        <div style="color: var(--muted); font-size: 16px;">↺</div>
+
+        <div class="step-box" id="step-rollback" style="flex: 1; min-width: 130px; text-align: center; padding: 10px; border-radius: 4px; background: #131d31; border: 1px solid var(--border);">
+          <div style="font-size: 12px; color: var(--muted);">OPTIONAL</div>
+          <div style="font-weight: 700; color: #f97316; font-size: 13px;">Rolled Back</div>
+          <div style="font-size: 12px; color: var(--muted);">Restores Snapshot</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Propose Action Control Center -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3>Propose New Remediation Action</h3>
+      <p style="color: var(--muted); margin-bottom: 12px; font-size: 14px;">
+        Trigger an action candidate to test the automated policy enforcement gate, approval workflow, or simulated rollback.
+      </p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 280px;">
+          <label style="display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px;">PLAYBOOK / ACTION PRESET</label>
+          <select id="remediationPreset" style="width: 100%;">
+            <option value="restart_service|srv-edge-01|single_host">restart_service: Graceful reload on srv-edge-01 [ALLOW-LISTED • SAFE]</option>
+            <option value="reroute_traffic|sw-core-fra-01|single_host">reroute_traffic: Uplink failover on sw-core-fra-01 [ALLOW-LISTED • SAFE]</option>
+            <option value="rate_limit_source|h_1234abcd|single_host">rate_limit_source: Rate-limit suspect entity h_1234abcd [ALLOW-LISTED • SAFE]</option>
+            <option value="flush_cache|srv-cache-01|single_host">flush_cache: Purge memory cache on srv-cache-01 [ALLOW-LISTED • SAFE]</option>
+            <option value="unauthorized_reboot|srv-edge-01|single_host">unauthorized_reboot: Unregistered command [POLICY VIOLATION: ALLOW-LIST]</option>
+            <option value="restart_service|srv-edge-01,srv-edge-02,srv-edge-03|multi_host">restart_service: Multi-Host Fleet Scope [POLICY VIOLATION: MAX SCOPE EXCEEDED]</option>
+            <option value="restart_service|srv-edge-01|business_hours">restart_service: Daytime Risky Trigger [POLICY VIOLATION: BUSINESS HOURS BLOCKED]</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="proposeSelectedAction()" style="background: #2563eb; color: #fff; padding: 6px 14px;">
+            + Propose Action Candidate
+          </button>
+        </div>
+        <div>
+          <button onclick="refreshRemediation()" class="btn-secondary" style="padding: 6px 12px;">
+            ↻ Refresh Remediation
+          </button>
+        </div>
+        <div>
+          <button id="btnToggleClearResolved" onclick="toggleClearResolved()" class="btn-secondary" style="padding: 6px 12px;">
+            Clear Resolved (Hide)
+          </button>
+        </div>
+        <div>
+          <button onclick="resetRemediationDemoState()" class="btn-secondary" style="padding: 6px 12px; border-color: #ef4444; color: #f87171;">
+            🗑 Reset Demo State
+          </button>
+        </div>
+      </div>
+      <div id="proposeNotice" style="margin-top: 10px; font-size: 13px; display: none;"></div>
+    </div>
+
+    <!-- Active Actions Table -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3>Governed Remediation Actions</h3>
+      <p style="color: var(--muted); margin-bottom: 12px; font-size: 14px;">
+        Actions requiring human operator approval. Execution is sandboxed in mock services only; system shell commands are physically excluded.
+      </p>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Target Entity</th>
+              <th>Action</th>
+              <th>Scope</th>
+              <th>Cause / Rec ID</th>
+              <th>State</th>
+              <th>Policy Enforcement</th>
+              <th>Rollback Plan</th>
+              <th>Operator Actions</th>
+            </tr>
+          </thead>
+          <tbody id="remediationBody">
+            <tr><td colspan="9" style="text-align: center; color: var(--muted);">Loading remediation actions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Live Mock Infrastructure State & Audit Trail Grid -->
+    <div class="grid-remediation-split">
+      <!-- Mock Infrastructure State Viewer -->
+      <div class="card">
+        <h3>Simulated Infrastructure State</h3>
+        <p style="color: var(--muted); margin-bottom: 10px; font-size: 13px;">
+          Live in-memory state of mock services. Shows changes upon simulated execution and state restoration upon rollback.
+        </p>
+        <pre id="mockStateViewer">Loading mock state...</pre>
+      </div>
+
+      <!-- Remediation Audit Trail -->
+      <div class="card">
+        <h3>Remediation Audit Trail</h3>
+        <p style="color: var(--muted); margin-bottom: 10px; font-size: 13px;">
+          Immutable UTC-stamped audit log entries tracking every governance transition.
+        </p>
+        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>UTC Time</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="remediationAuditBody">
+              <tr><td colspan="4" style="text-align: center; color: var(--muted);">Loading audit trail...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 8: Settings (Thresholds) -->
+  <section id="tab-settings" class="tab-content">
+    <div class="card">
+      <h2>Tenant Health Threshold Configuration</h2>
+      <p style="color: var(--muted); margin-bottom: 14px; font-size: 14px;">
+        Configurable health evaluation boundaries saved in SaaS SQLite <code>thresholds</code> table.
+      </p>
+      <form id="thresholdForm" onsubmit="saveThresholds(event)" style="max-width: 650px;">
+        <div class="table-responsive">
+          <table style="margin-bottom: 16px;">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Fair At</th>
+                <th>Poor At</th>
+                <th>Stale Fair (s)</th>
+                <th>Stale Poor (s)</th>
+              </tr>
+            </thead>
+            <tbody id="thresholdsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+        <button type="submit">Save Threshold Settings</button>
+        <span id="saveStatus" style="margin-left: 10px; color: var(--excellent); display: none;">Saved!</span>
+      </form>
+    </div>
+  </section>
+
+  <!-- Tab 9: Chaos Injector (Phase 12) -->
+  <section id="tab-chaos" class="tab-content">
+    <div class="panel" style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="margin: 0; color: var(--primary);">One-Click Chaos Scenario Injector (Phase 12)</h2>
+          <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">
+            Trigger real-time failure conditions matching the judging list. Watch the collector CLI and dashboard react within seconds.
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="triggerReset()" class="btn-secondary" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--poor); color: var(--poor); font-weight: bold; padding: 8px 14px; cursor: pointer;">
+            ↻ Reset to Baseline
+          </button>
+          <button onclick="triggerRehearsal()" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; border: none; font-weight: bold; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+            ▶ Run Rehearsal (All 8)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenarios Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px;" id="scenariosGrid">
+      <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Live Narration & Output Console -->
+    <div class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h3 style="margin: 0; color: var(--primary);">Live Scenario Narration & Injection Log</h3>
+        <button onclick="clearChaosConsole()" class="btn-secondary" style="font-size: 12px; padding: 4px 10px;">Clear Log</button>
+      </div>
+      <div id="chaosConsole" style="background: #090d16; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 12px; max-height: 240px; overflow-y: auto; color: #a5b4fc; white-space: pre-wrap; line-height: 1.5;">
+[Ready] Select any one-click scenario above, or run 'aiopsctl inject <scenario>' in PowerShell.
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab 10: Egress Proof & Side-by-Side Audit -->
+  <section id="tab-egress" class="tab-content">
+    <!-- Top KPI / Trust Boundary Tiles -->
+    <div class="grid-4" style="margin-bottom: 20px;">
+      <div class="tile">
+        <div class="tile-title">CUSTOMER TRUST BOUNDARY</div>
+        <div class="tile-count" style="color: var(--excellent); font-size: 20px;">Local SQLite</div>
+        <div class="tile-subtext">Raw logs & secrets physically stay on host</div>
+      </div>
+      <div class="tile">
+        <div class="tile-title">TRANSMISSION FORMAT</div>
+        <div class="tile-count" style="color: var(--primary); font-size: 20px;">UUIDv7 Metadata</div>
+        <div class="tile-subtext">allow-list.yaml strictly enforced</div>
+      </div>
+      <div class="tile">
+        <div class="tile-title">CRYPTOGRAPHIC INTEGRITY</div>
+        <div class="tile-count" style="color: var(--excellent); font-size: 20px;">100% Match</div>
+        <div class="tile-subtext">Verified against SaaS ACK hashes</div>
+      </div>
+      <div class="tile">
+        <div class="tile-title">WAN LEAK DETECTION</div>
+        <div class="tile-count" style="color: var(--good); font-size: 20px;">0 Hits</div>
+        <div class="tile-subtext">Zero passwords, tokens, or IPs egressed</div>
+      </div>
+    </div>
+
+    <!-- Action Header Panel -->
+    <div class="panel" style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2 style="margin: 0; color: var(--primary);">Egress Proof & Side-by-Side Audit (Hop 2 vs Hop 5)</h2>
+          <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">
+            Cryptographic proof that raw auth logs with cleartext credentials remain local, while only allow-listed metadata is egressed.
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="injectDemoSecretAndProve()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; font-weight: bold; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            ⚡ Inject Demo Secret & Prove Egress
+          </button>
+          <button onclick="loadEgressRecords()" class="btn-secondary" style="padding: 8px 14px; cursor: pointer;">
+            ↺ Refresh Ledger
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Side-by-Side Audit View (The terminal equivalent) -->
+    <div class="card" style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 style="margin: 0; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+            Egress Audit: <span id="currentEgressPid" style="font-family: monospace; color: var(--primary);">Select a payload below</span>
+          </h3>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 2px;" id="currentEgressTime">UTC Recorded: -</div>
+        </div>
+        <div id="egressVerificationBadge" class="badge badge-excellent" style="font-size: 13px; padding: 6px 12px;">
+          ✓ hash matches SaaS (verified cryptographic ACK)
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 16px; margin-bottom: 16px;">
+        <!-- Left: Raw Source (Local Only) -->
+        <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 6px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: #f87171; font-size: 13px; letter-spacing: 0.5px;">
+              [LEFT: RAW SOURCE (LOCAL ONLY — SECRETS VISIBLE)]
+            </span>
+            <span class="badge badge-poor" style="font-size: 11px;">Host SQLite WAL</span>
+          </div>
+          <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+            Verbatim capture on the edge device. Contains raw passwords, tokens, usernames, and private IPs. <strong>NEVER leaves this host.</strong>
+          </div>
+          <pre id="egressRawDisplay" style="background: #090d16; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; padding: 12px; color: #fca5a5; font-family: monospace; font-size: 12px; white-space: pre-wrap; line-height: 1.6; min-height: 220px; max-height: 320px; overflow-y: auto;">Select or inject an egress record...</pre>
+        </div>
+
+        <!-- Right: Egress Payload (Metadata Only) -->
+        <div style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.35); border-radius: 6px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: #4ade80; font-size: 13px; letter-spacing: 0.5px;">
+              [RIGHT: EGRESS PAYLOAD (METADATA ONLY — ALLOW-LISTED)]
+            </span>
+            <span class="badge badge-excellent" style="font-size: 11px;">WAN Ingest Wire</span>
+          </div>
+          <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+            Verbatim JSON received by Central SaaS. All unknown fields dropped, credentials stripped, hostnames pseudonymized (<code style="color: var(--primary);">h_xxxxxxxx</code>).
+          </div>
+          <pre id="egressJsonDisplay" style="background: #090d16; border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 4px; padding: 12px; color: #86efac; font-family: monospace; font-size: 12px; white-space: pre-wrap; line-height: 1.6; min-height: 220px; max-height: 320px; overflow-y: auto;">Select or inject an egress record...</pre>
+        </div>
+      </div>
+
+      <!-- Verification Status Bar -->
+      <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; font-family: monospace; font-size: 12px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="color: var(--muted);">PAYLOAD SHA-256: </span>
+          <span id="egressShaText" style="color: #fbbf24;">-</span>
+        </div>
+        <div>
+          <span style="color: var(--muted);">SAAS ACK HASH: </span>
+          <span id="egressAckShaText" style="color: #60a5fa;">-</span>
+        </div>
+        <div>
+          <span style="color: var(--muted);">NON-REPUDIATION: </span>
+          <span id="egressMatchStatus" style="color: var(--excellent); font-weight: bold;">VERIFIED ✓</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Append-Only Egress Ledger Table -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2>Egress Log: Proof of Transmission (Append-Only Ledger)</h2>
+        <span style="font-size: 12px; color: var(--muted);">Cryptographic receipt per payload ID</span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">Seq</th>
+              <th style="width: 170px;">Time (UTC)</th>
+              <th>Payload ID</th>
+              <th style="width: 80px;">Status</th>
+              <th>SHA-256 Digest</th>
+              <th>SaaS ACK Hash</th>
+              <th style="width: 120px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="egressLogsBody">
+            <tr><td colspan="7" style="text-align: center; color: var(--muted);">Loading egress audit records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer with Live Latency Calculation -->
+  <footer>
+    <div>
+      SENTINEL EDGE AIOps · <span id="regionLabel">Region: EU</span> · Multi-tenant Tenant Scoped
+    </div>
+    <div>
+      Collection-to-Dashboard Latency:
+      <span id="latencyDisplay" class="latency-pill">no data</span>
+    </div>
+    <div>
+      Last Update: <span id="lastUpdateTime">-</span>
+    </div>
+  </footer>
+
+  </div>
+
+  <!-- Why? Drawer -->
+  <div id="whyDrawer" class="drawer">
+    <div class="drawer-header">
+      <h3 style="color: var(--primary);">Root Cause Analysis</h3>
+      <button class="close-btn" onclick="closeDrawer()">&times;</button>
+    </div>
+    <div id="drawerContent">
+      <!-- Injected dynamically -->
+    </div>
+  </div>
+
+  <script>
+    // Global State
+    let currentTenant = "acme";
+    let sseSource = null;
+    let lastEventTimeUtc = null;
+    let lastReceivedTimestamp = Date.now();
+    let charts = {};
+    let cachedIncidents = {};
+
+    // Dynamic viewer credentials managed via sessionStorage only (no static/committed tokens)
+    function getViewerToken() {
+      return sessionStorage.getItem("sentinel_viewer_token") || "";
+    }
+
+    function apiUrl(path) {
+      return path;
+    }
+
+    function getAuthHeaders() {
+      const tok = getViewerToken();
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Tenant-Id": currentTenant,
+      };
+      if (tok) {
+        headers["X-Api-Key"] = tok;
+      }
+      return headers;
+    }
+
+    function updateAuthBadge(text, className) {
+      const badge = document.getElementById("authBadge");
+      if (badge) {
+        badge.className = `badge ${className}`;
+        badge.textContent = text;
+      }
+    }
+
+    function clearAllData(reason = "Login required") {
+      sessionStorage.removeItem("sentinel_viewer_token");
+
+      // 1. Close active SSE connection
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
+      }
+      const sseStatus = document.getElementById("sseStatus");
+      if (sseStatus) {
+        sseStatus.className = "badge badge-poor";
+        sseStatus.textContent = "SSE Disconnected";
+      }
+
+      // 2. Empty every chart
+      Object.values(charts).forEach(chart => {
+        if (chart && chart.data) {
+          chart.data.labels = [];
+          if (chart.data.datasets) {
+            chart.data.datasets.forEach(ds => {
+              ds.data = [];
+            });
+          }
+          chart.update();
+        }
+      });
+
+      // 3. Reset fleet overview counters
+      const countExc = document.getElementById("countExcellent");
+      const countG = document.getElementById("countGood");
+      const countF = document.getElementById("countFair");
+      const countP = document.getElementById("countPoor");
+      if (countExc) countExc.innerText = "0";
+      if (countG) countG.innerText = "0";
+      if (countF) countF.innerText = "0";
+      if (countP) countP.innerText = "0";
+
+      // 4. Reset security counters
+      const secFail = document.getElementById("secFailedCount");
+      const secRisk = document.getElementById("secRiskScore");
+      const secAlert = document.getElementById("secAlertCount");
+      if (secFail) secFail.innerText = "0";
+      if (secRisk) {
+        secRisk.innerText = "0 / 100";
+        secRisk.style.color = "var(--good)";
+      }
+      if (secAlert) secAlert.innerText = "0";
+
+      // 5. Reset summaries and latency
+      const colSum = document.getElementById("collectorSummary");
+      if (colSum) colSum.innerText = "0 total (0 offline)";
+      const latEl = document.getElementById("latencyDisplay");
+      if (latEl) latEl.innerText = "no data";
+      const staleEl = document.getElementById("staleIndicator");
+      if (staleEl) staleEl.style.display = "none";
+
+      // 6. Clear tables with placeholder rows
+      function setTablePlaceholder(tbodyId, colSpan, text) {
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        tbody.replaceChildren();
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = colSpan;
+        td.style.textAlign = "center";
+        td.style.color = "var(--poor)";
+        td.style.padding = "16px";
+        td.textContent = text;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+
+      setTablePlaceholder("entityHealthBody", 4, `${reason}. Please enter a valid viewer token.`);
+      setTablePlaceholder("collectorsBody", 8, `${reason}. No collector data visible.`);
+      setTablePlaceholder("incidentsBody", 7, `${reason}. No incident data visible.`);
+      setTablePlaceholder("historyBody", 5, `${reason}. No health history visible.`);
+      setTablePlaceholder("securityEventsBody", 5, `${reason}. No security events visible.`);
+      setTablePlaceholder("thresholdsTableBody", 5, `${reason}. No threshold configuration visible.`);
+      setTablePlaceholder("remediationBody", 9, `${reason}. No remediation actions visible.`);
+      setTablePlaceholder("remediationAuditBody", 4, `${reason}. No remediation audit visible.`);
+      setTablePlaceholder("egressLogsBody", 7, `${reason}. No egress proof data visible.`);
+
+      const egressRaw = document.getElementById("egressRawDisplay");
+      if (egressRaw) egressRaw.textContent = `[Unauthorized] ${reason}`;
+      const egressJson = document.getElementById("egressJsonDisplay");
+      if (egressJson) egressJson.textContent = `[Unauthorized] ${reason}`;
+
+      const mockState = document.getElementById("mockStateViewer");
+      if (mockState) mockState.textContent = "{\n  \"status\": \"unauthorized\",\n  \"message\": \"" + reason + "\"\n}";
+
+      const chaosConsole = document.getElementById("chaosConsole");
+      if (chaosConsole) chaosConsole.textContent = `[Unauthorized] ${reason}. Token authentication required.\n`;
+
+      cachedIncidents = {};
+      closeDrawer();
+    }
+
+    function showUnauthorized(reason = "Unauthorized: Invalid or missing token") {
+      updateAuthBadge("Unauthorized", "badge-poor");
+      clearAllData(reason);
+    }
+
+    function showForbidden(reason = "Forbidden: Token not authorized for selected tenant") {
+      updateAuthBadge("Forbidden (403)", "badge-poor");
+      clearAllData(reason);
+    }
+
+    function logoutViewer() {
+      clearAllData("Logged out");
+      updateAuthBadge("Logged Out", "badge-poor");
+    }
+
+    async function saveViewerToken() {
+      const input = document.getElementById("viewerTokenInput");
+      const val = input ? input.value.trim() : "";
+      if (!val) {
+        clearAllData("Login required");
+        updateAuthBadge("Token Required", "badge-fair");
+        return;
+      }
+
+      updateAuthBadge("Validating...", "badge-fair");
+
+      try {
+        const res = await fetch(apiUrl("/api/whoami"), {
+          headers: {
+            "X-Api-Key": val,
+            "X-Tenant-Id": currentTenant,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (res.status === 401) {
+          showUnauthorized("Unauthorized: Invalid viewer token (401)");
+          return;
+        }
+
+        if (res.status === 403) {
+          const errData = await res.json().catch(() => ({}));
+          const msg = errData.error || errData.detail || `Forbidden: Token not authorized for tenant '${currentTenant}' (403)`;
+          showForbidden(msg);
+          return;
+        }
+
+        if (!res.ok) {
+          showUnauthorized(`HTTP ${res.status}`);
+          return;
+        }
+
+        // Successfully validated: save strictly this validated token
+        sessionStorage.setItem("sentinel_viewer_token", val);
+        updateAuthBadge("Authenticated", "badge-excellent");
+        initSSE();
+        refreshAll();
+      } catch (err) {
+        showUnauthorized("Validation error: " + err.message);
+      }
+    }
+
+    // Initialization
+    window.addEventListener("DOMContentLoaded", () => {
+      initCharts();
+      const existingToken = getViewerToken();
+      if (existingToken) {
+        const inp = document.getElementById("viewerTokenInput");
+        if (inp) inp.value = existingToken;
+        updateAuthBadge("Validating...", "badge-fair");
+        fetch(apiUrl("/api/whoami"), { headers: getAuthHeaders() }).then(res => {
+          if (res.ok) {
+            updateAuthBadge("Authenticated", "badge-excellent");
+            initSSE();
+            refreshAll();
+          } else if (res.status === 403) {
+            showForbidden();
+          } else {
+            showUnauthorized();
+          }
+        }).catch(() => {
+          showUnauthorized();
+        });
+      } else {
+        showUnauthorized("Login required");
+        updateAuthBadge("Token Required", "badge-fair");
+      }
+      setInterval(checkStaleness, 2000);
+    });
+
+    function getSelectedTz() {
+      return document.getElementById("tzSelect").value;
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return "-";
+      try {
+        const d = new Date(isoStr.endsWith("Z") ? isoStr : isoStr + "Z");
+        const tz = getSelectedTz();
+        if (tz === "UTC") {
+          return d.toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
+        } else if (tz === "local") {
+          return d.toLocaleString();
+        } else {
+          return d.toLocaleString("en-US", { timeZone: tz }) + " " + tz.split("/").pop();
+        }
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      event.target.classList.add("active");
+      document.getElementById("tab-" + tabId).classList.add("active");
+      if (tabId === "remediation") {
+        refreshRemediation();
+      }
+      if (tabId === "chaos") {
+        renderScenariosGrid();
+      }
+      if (tabId === "egress") {
+        loadEgressRecords();
+      }
+    }
+
+    // Safe DOM helper to render text strictly via textContent (no innerHTML / XSS)
+    function createCell(text, isBold = false, color = null) {
+      const td = document.createElement("td");
+      if (color) td.style.color = color;
+      if (isBold) {
+        const strong = document.createElement("strong");
+        strong.textContent = text !== null && text !== undefined ? String(text) : "-";
+        td.appendChild(strong);
+      } else {
+        td.textContent = text !== null && text !== undefined ? String(text) : "-";
+      }
+      return td;
+    }
+
+    function createBadgeCell(text, badgeClass) {
+      const td = document.createElement("td");
+      const span = document.createElement("span");
+      span.className = `badge ${badgeClass}`;
+      span.textContent = text !== null && text !== undefined ? String(text) : "-";
+      td.appendChild(span);
+      return td;
+    }
+
+    function onTenantChanged() {
+      currentTenant = document.getElementById("tenantSelect").value;
+      document.getElementById("regionLabel").innerText = currentTenant === "globex" ? "Region: IN" : "Region: EU";
+      const latEl = document.getElementById("latencyDisplay");
+      if (latEl) latEl.innerText = "no data";
+
+      const tok = getViewerToken();
+      if (!tok) {
+        clearAllData("Login required");
+        return;
+      }
+
+      fetch(apiUrl("/api/whoami"), {
+        headers: getAuthHeaders(),
+      }).then(res => {
+        if (res.status === 403) {
+          showForbidden(`Forbidden: Token not authorized for tenant '${currentTenant}' (403)`);
+        } else if (res.status === 401) {
+          showUnauthorized();
+        } else if (res.ok) {
+          updateAuthBadge("Authenticated", "badge-excellent");
+          initSSE();
+          refreshAll();
+        }
+      }).catch(err => {
+        console.error("Tenant switch validation failed:", err);
+      });
+    }
+
+    // Staleness Detection (Hard Rule: clearly visible indicator when data stops arriving)
+    function checkStaleness() {
+      const elapsedMs = Date.now() - lastReceivedTimestamp;
+      const indicator = document.getElementById("staleIndicator");
+      if (elapsedMs > 15000) {
+        indicator.style.display = "inline-block";
+        indicator.innerText = `⚠ TELEMETRY STALE (${Math.round(elapsedMs / 1000)}s without update)`;
+      } else {
+        indicator.style.display = "none";
+      }
+    }
+
+    function updateLatencyWidget(eventUtcStr) {
+      const el = document.getElementById("latencyDisplay");
+      if (!eventUtcStr) {
+        if (el && (!el.innerText || el.innerText === "0 ms")) el.innerText = "no data";
+        return;
+      }
+      try {
+        const eventMs = new Date(eventUtcStr.endsWith("Z") ? eventUtcStr : eventUtcStr + "Z").getTime();
+        if (isNaN(eventMs)) {
+          if (el && (!el.innerText || el.innerText === "0 ms")) el.innerText = "no data";
+          return;
+        }
+        const nowMs = Date.now();
+        const diffMs = Math.max(0, nowMs - eventMs);
+        if (el) el.innerText = `${diffMs} ms`;
+        lastReceivedTimestamp = nowMs;
+        const lu = document.getElementById("lastUpdateTime");
+        if (lu) lu.innerText = formatTime(new Date().toISOString());
+      } catch (e) {
+        if (el && (!el.innerText || el.innerText === "0 ms")) el.innerText = "no data";
+      }
+    }
+
+    // SSE Connection — Authenticated via single-use ticket (no secrets in URL)
+    async function initSSE() {
+      if (sseSource) {
+        sseSource.close();
+        sseSource = null;
+      }
+      const tok = getViewerToken();
+      if (!tok) {
+        const statusEl = document.getElementById("sseStatus");
+        if (statusEl) {
+          statusEl.className = "badge badge-fair";
+          statusEl.innerText = "SSE Idle (No Token)";
+        }
+        return;
+      }
+
+      const statusEl = document.getElementById("sseStatus");
+      if (statusEl) {
+        statusEl.className = "badge badge-fair";
+        statusEl.innerText = "Connecting SSE...";
+      }
+
+      try {
+        const ticketRes = await fetch(apiUrl("/api/sse-ticket"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+
+        if (ticketRes.status === 401) {
+          showUnauthorized();
+          return;
+        }
+        if (ticketRes.status === 403) {
+          showForbidden();
+          return;
+        }
+        if (!ticketRes.ok) {
+          if (statusEl) {
+            statusEl.className = "badge badge-poor";
+            statusEl.innerText = "SSE Auth Failed";
+          }
+          return;
+        }
+
+        const ticketData = await ticketRes.json();
+        const ticket = ticketData.ticket;
+
+        sseSource = new EventSource(`/api/health/stream?ticket=${encodeURIComponent(ticket)}&tenant=${encodeURIComponent(currentTenant)}`);
+
+        sseSource.addEventListener("connected", (e) => {
+          if (statusEl) {
+            statusEl.className = "badge badge-excellent";
+            statusEl.innerText = `SSE Live (${currentTenant})`;
+          }
+        });
+
+        sseSource.addEventListener("health_change", (e) => {
+          fetchHealth();
+          fetchHealthHistory();
+        });
+
+        sseSource.addEventListener("telemetry", (e) => {
+          const payload = JSON.parse(e.data);
+          const data = payload.data || {};
+          updateLatencyWidget(data.event_time_utc);
+          appendTelemetryPoint(data);
+        });
+
+        sseSource.addEventListener("collector_heartbeat", (e) => {
+          fetchCollectors();
+        });
+
+        sseSource.addEventListener("incident", (e) => {
+          fetchIncidents();
+        });
+
+        sseSource.addEventListener("security_event", (e) => {
+          fetchSecurity();
+        });
+
+        sseSource.onerror = () => {
+          if (statusEl) {
+            statusEl.className = "badge badge-poor";
+            statusEl.innerText = "SSE Reconnecting...";
+          }
+          if (sseSource) {
+            sseSource.close();
+            sseSource = null;
+          }
+          setTimeout(() => {
+            if (getViewerToken()) initSSE();
+          }, 3000);
+        };
+      } catch (err) {
+        console.error("SSE connection error:", err);
+      }
+    }
+
+    // Refresh Data
+    async function refreshAll() {
+      await Promise.all([
+        fetchHealth(),
+        fetchCollectors(),
+        fetchMetricsSeries(),
+        fetchIncidents(),
+        fetchHealthHistory(),
+        fetchThresholds(),
+        fetchSecurity(),
+        fetchRemediations(),
+        fetchRemediationAudit(),
+        fetchMockState(),
+      ]);
+      renderAll();
+    }
+
+    function renderAll() {
+      // Re-renders timestamp strings in tables when timezone changes
+      fetchHealth();
+      fetchCollectors();
+      fetchIncidents();
+      fetchHealthHistory();
+      fetchSecurity();
+      fetchRemediations();
+      fetchRemediationAudit();
+    }
+
+    // API Calls — All endpoints authenticate via viewer token and render via plain text
+    async function fetchHealth() {
+      try {
+        const res = await fetch(apiUrl("/api/health"), { headers: getAuthHeaders() });
+        if (res.status === 401) {
+          showUnauthorized();
+          return;
+        }
+        if (res.status === 403) {
+          showForbidden();
+          return;
+        }
+        if (res.ok) {
+          updateAuthBadge("Authenticated", "badge-excellent");
+        }
+        const json = await res.json();
+        const entities = json.entities || [];
+
+        let exc = 0, good = 0, fair = 0, poor = 0;
+        const tbody = document.getElementById("entityHealthBody");
+        tbody.replaceChildren();
+
+        if (entities.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 4;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = `No health records for tenant '${currentTenant}'.`;
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+        }
+
+        entities.forEach(ent => {
+          const s = ent.state || "Unknown";
+          if (s === "Excellent") exc++;
+          else if (s === "Good") good++;
+          else if (s === "Fair") fair++;
+          else if (s === "Poor") poor++;
+
+          const badgeCls = `badge-${s.toLowerCase()}`;
+          const tr = document.createElement("tr");
+          tr.appendChild(createCell(ent.entity_id, true));
+          tr.appendChild(createBadgeCell(s, badgeCls));
+          tr.appendChild(createCell(ent.reason, false));
+          tr.appendChild(createCell(formatTime(ent.updated_utc), false, "var(--muted)"));
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("countExcellent").innerText = exc;
+        document.getElementById("countGood").innerText = good;
+        document.getElementById("countFair").innerText = fair;
+        document.getElementById("countPoor").innerText = poor;
+      } catch (err) {
+        console.error("fetchHealth error:", err);
+      }
+    }
+
+    async function fetchCollectors() {
+      try {
+        const res = await fetch(apiUrl("/api/collectors"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const collectors = json.collectors || [];
+        const tbody = document.getElementById("collectorsBody");
+        tbody.replaceChildren();
+
+        if (collectors.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 8;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = "No registered collectors found.";
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+          return;
+        }
+
+        let offlineCount = 0;
+        collectors.forEach(c => {
+          if (c.is_offline) offlineCount++;
+          const tr = document.createElement("tr");
+          if (c.is_offline) {
+            tr.style.background = "rgba(220, 38, 38, 0.08)";
+          }
+
+          const statusText = c.is_offline
+            ? `OFFLINE (${c.seconds_since_heartbeat ? c.seconds_since_heartbeat + "s" : "no data"})`
+            : "ACTIVE";
+          const statusClass = c.is_offline ? "badge-offline" : "badge-active";
+
+          tr.appendChild(createCell(c.id, true));
+          tr.appendChild(createBadgeCell(statusText, statusClass));
+          tr.appendChild(createCell(formatTime(c.last_seen)));
+          tr.appendChild(createCell(c.version));
+          tr.appendChild(createCell(c.cpu !== null ? c.cpu.toFixed(1) + "%" : "-"));
+          tr.appendChild(createCell(c.mem !== null ? c.mem.toFixed(1) + "%" : "-"));
+          tr.appendChild(createCell(c.queue_depth));
+          tr.appendChild(createCell(c.config_hash ? c.config_hash.substring(0, 8) : "-", false, "var(--muted)"));
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("collectorSummary").innerText = `${collectors.length} total (${offlineCount} offline)`;
+      } catch (err) {
+        console.error("fetchCollectors error:", err);
+      }
+    }
+
+    async function fetchMetricsSeries() {
+      try {
+        const res = await fetch(apiUrl("/api/metrics/series?limit=40"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const metrics = json.metrics || {};
+
+        updateChart(charts.cpu, metrics.cpu);
+        updateChart(charts.mem, metrics.memory || metrics.mem);
+        updateChart(charts.disk, metrics.disk);
+        updateChart(charts.latency, metrics.latency);
+        updateChart(charts.packet_loss, metrics.packet_loss);
+        updateChart(charts.bandwidth, metrics.bandwidth);
+        updateChart(charts.connectivity, metrics.connectivity);
+
+        // Update latency widget with newest metric time
+        const latestCpu = (metrics.cpu && metrics.cpu.data && metrics.cpu.data.length > 0)
+          ? metrics.cpu.data[metrics.cpu.data.length - 1].time
+          : null;
+        if (latestCpu) updateLatencyWidget(latestCpu);
+      } catch (err) {
+        console.error("fetchMetricsSeries error:", err);
+      }
+    }
+
+    async function fetchIncidents() {
+      try {
+        const res = await fetch(apiUrl("/api/incidents"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const incs = json.incidents || [];
+        const tbody = document.getElementById("incidentsBody");
+        tbody.replaceChildren();
+        cachedIncidents = {};
+
+        if (incs.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 7;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = `No open incidents for tenant '${currentTenant}'.`;
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+          return;
+        }
+
+        incs.forEach(inc => {
+          cachedIncidents[inc.id] = inc;
+          const sev = inc.severity ? inc.severity.toLowerCase() : "info";
+          const badgeClass = sev === "critical" ? "badge-poor" : (sev === "warning" ? "badge-fair" : "badge-good");
+          const suppressed = inc.suppressed_count || 0;
+          const reductionStr = `${suppressed + 1} alerts reduced to 1 incident`;
+
+          const tr = document.createElement("tr");
+          tr.appendChild(createCell(inc.id, true));
+          tr.appendChild(createBadgeCell(sev, badgeClass));
+          tr.appendChild(createCell(inc.title));
+          tr.appendChild(createCell(inc.root_cause_candidate || "-", true, "#c084fc"));
+
+          const tdRed = document.createElement("td");
+          const spanRed = document.createElement("span");
+          spanRed.style.color = "#4ade80";
+          spanRed.style.fontWeight = "700";
+          spanRed.textContent = reductionStr;
+          tdRed.appendChild(spanRed);
+          tr.appendChild(tdRed);
+
+          tr.appendChild(createBadgeCell(inc.status, inc.status === "open" ? "badge-fair" : "badge-excellent"));
+
+          const tdBtn = document.createElement("td");
+          const btn = document.createElement("button");
+          btn.textContent = "Why?";
+          btn.onclick = () => openDrawer(inc.id);
+          tdBtn.appendChild(btn);
+          tr.appendChild(tdBtn);
+
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("fetchIncidents error:", err);
+      }
+    }
+
+    async function fetchHealthHistory() {
+      try {
+        const res = await fetch(apiUrl("/api/health/history?limit=25"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const history = json.history || [];
+        const tbody = document.getElementById("historyBody");
+        tbody.replaceChildren();
+
+        if (history.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 5;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = "No transition history yet.";
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+          return;
+        }
+
+        history.forEach(h => {
+          const tr = document.createElement("tr");
+          tr.appendChild(createCell(formatTime(h.at_utc)));
+          tr.appendChild(createCell(h.entity_id, true));
+          tr.appendChild(createBadgeCell(h.from_state, `badge-${(h.from_state||'').toLowerCase()}`));
+          tr.appendChild(createBadgeCell(h.to_state, `badge-${(h.to_state||'').toLowerCase()}`));
+          tr.appendChild(createCell(h.reason));
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("fetchHealthHistory error:", err);
+      }
+    }
+
+    async function fetchSecurity() {
+      try {
+        const res = await fetch(apiUrl("/api/security/events?limit=20"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const events = json.events || [];
+        const tbody = document.getElementById("securityEventsBody");
+        tbody.replaceChildren();
+
+        let failCount = 0;
+        let maxRisk = 0;
+
+        if (events.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 5;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = "No security summaries recorded.";
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+        }
+
+        events.forEach(e => {
+          const ctx = e.context || "";
+          const matchRisk = ctx.match(/risk\s+(\d+)/i);
+          if (matchRisk) {
+            const r = parseInt(matchRisk[1]);
+            if (r > maxRisk) maxRisk = r;
+          }
+          const matchFails = ctx.match(/(\d+)\s+failed/i);
+          if (matchFails) {
+            failCount += parseInt(matchFails[1]);
+          }
+
+          const tr = document.createElement("tr");
+          tr.appendChild(createCell(e.payload_id ? e.payload_id.substring(0, 8) : "-"));
+          tr.appendChild(createCell(e.category || "-"));
+          tr.appendChild(createBadgeCell(e.severity, e.severity === 'critical' ? 'badge-poor' : 'badge-fair'));
+          tr.appendChild(createCell(ctx));
+          tr.appendChild(createCell(formatTime(e.event_time_utc), false, "var(--muted)"));
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("secFailedCount").innerText = failCount;
+        document.getElementById("secRiskScore").innerText = `${maxRisk} / 100`;
+        document.getElementById("secRiskScore").style.color = maxRisk > 75 ? "var(--poor)" : (maxRisk > 40 ? "var(--fair)" : "var(--good)");
+        document.getElementById("secAlertCount").innerText = events.length;
+      } catch (err) {
+        console.error("fetchSecurity error:", err);
+      }
+    }
+
+    async function fetchThresholds() {
+      try {
+        const res = await fetch(apiUrl("/api/thresholds"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const thresholds = json.thresholds || [];
+        const tbody = document.getElementById("thresholdsTableBody");
+        tbody.replaceChildren();
+
+        thresholds.forEach(t => {
+          const tr = document.createElement("tr");
+          const tdCat = document.createElement("td");
+          const strongCat = document.createElement("strong");
+          strongCat.textContent = t.category;
+          tdCat.appendChild(strongCat);
+          const hiddenInput = document.createElement("input");
+          hiddenInput.type = "hidden";
+          hiddenInput.name = "category";
+          hiddenInput.value = t.category;
+          tdCat.appendChild(hiddenInput);
+          tr.appendChild(tdCat);
+
+          const tdFair = document.createElement("td");
+          const inputFair = document.createElement("input");
+          inputFair.type = "number";
+          inputFair.step = "0.1";
+          inputFair.name = `fair_at_${t.category}`;
+          inputFair.value = t.fair_at;
+          inputFair.style.width = "80px";
+          tdFair.appendChild(inputFair);
+          tr.appendChild(tdFair);
+
+          const tdPoor = document.createElement("td");
+          const inputPoor = document.createElement("input");
+          inputPoor.type = "number";
+          inputPoor.step = "0.1";
+          inputPoor.name = `poor_at_${t.category}`;
+          inputPoor.value = t.poor_at;
+          inputPoor.style.width = "80px";
+          tdPoor.appendChild(inputPoor);
+          tr.appendChild(tdPoor);
+
+          const tdStaleFair = document.createElement("td");
+          const inputStaleFair = document.createElement("input");
+          inputStaleFair.type = "number";
+          inputStaleFair.name = `stale_fair_${t.category}`;
+          inputStaleFair.value = t.stale_fair_s;
+          inputStaleFair.style.width = "70px";
+          tdStaleFair.appendChild(inputStaleFair);
+          tr.appendChild(tdStaleFair);
+
+          const tdStalePoor = document.createElement("td");
+          const inputStalePoor = document.createElement("input");
+          inputStalePoor.type = "number";
+          inputStalePoor.name = `stale_poor_${t.category}`;
+          inputStalePoor.value = t.stale_poor_s;
+          inputStalePoor.style.width = "70px";
+          tdStalePoor.appendChild(inputStalePoor);
+          tr.appendChild(tdStalePoor);
+
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("fetchThresholds error:", err);
+      }
+    }
+
+    async function saveThresholds(e) {
+      e.preventDefault();
+      const tbody = document.getElementById("thresholdsTableBody");
+      const rows = tbody.querySelectorAll("tr");
+      const updates = [];
+
+      rows.forEach(tr => {
+        const cat = tr.querySelector(`input[name="category"]`).value;
+        const fairAt = parseFloat(tr.querySelector(`input[name="fair_at_${cat}"]`).value);
+        const poorAt = parseFloat(tr.querySelector(`input[name="poor_at_${cat}"]`).value);
+        const staleFair = parseInt(tr.querySelector(`input[name="stale_fair_${cat}"]`).value);
+        const stalePoor = parseInt(tr.querySelector(`input[name="stale_poor_${cat}"]`).value);
+        updates.push({
+          category: cat,
+          fair_at: fairAt,
+          poor_at: poorAt,
+          stale_fair_s: staleFair,
+          stale_poor_s: stalePoor,
+        });
+      });
+
+      try {
+        const res = await fetch(apiUrl("/api/thresholds"), {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(updates),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        if (res.ok) {
+          const st = document.getElementById("saveStatus");
+          st.style.display = "inline";
+          setTimeout(() => st.style.display = "none", 3000);
+          fetchHealth();
+        }
+      } catch (err) {
+        alert("Failed to save thresholds: " + err);
+      }
+    }
+
+    // ── Phase 10: Governed Remediation Functions ──────────────────────────────
+    let hideResolvedActions = false;
+
+    function toggleClearResolved() {
+      hideResolvedActions = !hideResolvedActions;
+      const btn = document.getElementById("btnToggleClearResolved");
+      if (btn) {
+        if (hideResolvedActions) {
+          btn.textContent = "Show All Actions";
+          btn.style.borderColor = "#38bdf8";
+          btn.style.color = "#38bdf8";
+        } else {
+          btn.textContent = "Clear Resolved (Hide)";
+          btn.style.borderColor = "";
+          btn.style.color = "";
+        }
+      }
+      fetchRemediations();
+    }
+
+    async function resetRemediationDemoState() {
+      if (!confirm("Reset remediation demo state? This will clear all remediation rows and restore mock infrastructure to baseline.")) {
+        return;
+      }
+      try {
+        const res = await fetch(apiUrl("/api/remediation/reset"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const data = await res.json();
+        if (res.ok) {
+          const notice = document.getElementById("proposeNotice");
+          if (notice) {
+            notice.style.display = "block";
+            notice.style.color = "#22c55e";
+            notice.textContent = `✓ Remediation demo state reset. Cleared ${data.cleared_count || 0} action(s).`;
+          }
+          await refreshRemediation();
+        } else {
+          alert("Reset failed: " + (data.error || "Unknown error"));
+        }
+      } catch (err) {
+        alert("Error resetting remediation demo state: " + err.message);
+      }
+    }
+
+    async function fetchRemediations() {
+      try {
+        const res = await fetch(apiUrl("/api/remediation"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        let actions = json.actions || [];
+        const tbody = document.getElementById("remediationBody");
+        if (!tbody) return;
+        tbody.replaceChildren();
+
+        if (hideResolvedActions) {
+          actions = actions.filter(a => !["executed", "rolled_back", "rejected"].includes(a.state));
+        }
+
+        if (actions.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 9;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = hideResolvedActions
+            ? "No open remediation actions (resolved actions hidden). Click 'Show All Actions' to display history."
+            : "No remediation actions proposed yet. Use the control above to propose an action candidate.";
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+          return;
+        }
+
+        actions.forEach(a => {
+          const tr = document.createElement("tr");
+
+          // ID
+          tr.appendChild(createCell(String(a.id), true));
+
+          // Target
+          tr.appendChild(createCell(a.target_entity || "-"));
+
+          // Action
+          tr.appendChild(createCell(a.action_name || "-"));
+
+          // Scope
+          tr.appendChild(createCell(a.scope || "single_host", false, "var(--muted)"));
+
+          // Cause / Rec ID
+          const causeTd = document.createElement("td");
+          if (a.recommendation_id && Number(a.recommendation_id) > 0) {
+            const recBadge = document.createElement("span");
+            recBadge.style.color = "#38bdf8";
+            recBadge.style.fontWeight = "600";
+            recBadge.textContent = a.incident_id ? `Rec #${a.recommendation_id} (${a.incident_id})` : `Rec #${a.recommendation_id}`;
+            causeTd.appendChild(recBadge);
+          } else if (a.incident_id) {
+            const incSpan = document.createElement("span");
+            incSpan.style.color = "#38bdf8";
+            incSpan.textContent = `Inc: ${a.incident_id}`;
+            causeTd.appendChild(incSpan);
+          } else {
+            const manualBadge = document.createElement("span");
+            manualBadge.className = "badge";
+            manualBadge.style.background = "rgba(148, 163, 184, 0.15)";
+            manualBadge.style.color = "#94a3b8";
+            manualBadge.style.border = "1px solid #475569";
+            manualBadge.textContent = "manual";
+            causeTd.appendChild(manualBadge);
+          }
+          tr.appendChild(causeTd);
+
+          // State Badge
+          let badgeClass = "badge-fair";
+          let stateLabel = a.state;
+          if (a.state === "executed") {
+            badgeClass = "badge-excellent";
+            stateLabel = "Executed (Simulated)";
+          } else if (a.state === "awaiting_approval") {
+            badgeClass = "badge-fair";
+            stateLabel = "Awaiting Approval";
+          } else if (a.state === "blocked") {
+            badgeClass = "badge-poor";
+            stateLabel = "Blocked by Policy";
+          } else if (a.state === "rolled_back") {
+            badgeClass = "badge-stale";
+            stateLabel = "Rolled Back";
+          } else if (a.state === "rejected") {
+            badgeClass = "badge-poor";
+            stateLabel = "Rejected";
+          }
+          tr.appendChild(createBadgeCell(stateLabel, badgeClass));
+
+          // Policy Enforcement Result
+          tr.appendChild(createCell(a.policy_result || "Evaluated against allow-list", false, a.state === "blocked" ? "#ef4444" : "var(--muted)"));
+
+          // Rollback Plan
+          const hasRollback = !!a.rollback_plan;
+          tr.appendChild(createCell(hasRollback ? "✓ Stored Pre-Execution" : (a.state === 'blocked' ? "N/A (Blocked)" : "Pending Approval"), false, hasRollback ? "#22c55e" : "var(--muted)"));
+
+          // Operator Controls
+          const ctrlTd = document.createElement("td");
+          if (a.state === "awaiting_approval") {
+            const btnApprove = document.createElement("button");
+            btnApprove.textContent = "✓ Approve & Simulate";
+            btnApprove.style.background = "#16a34a";
+            btnApprove.style.borderColor = "#16a34a";
+            btnApprove.style.marginRight = "6px";
+            btnApprove.onclick = () => approveRemediationAction(a.id);
+            ctrlTd.appendChild(btnApprove);
+
+            const btnReject = document.createElement("button");
+            btnReject.textContent = "✗ Reject";
+            btnReject.className = "btn-secondary";
+            btnReject.style.color = "#ef4444";
+            btnReject.onclick = () => rejectRemediationAction(a.id);
+            ctrlTd.appendChild(btnReject);
+          } else if (a.state === "executed") {
+            const btnRollback = document.createElement("button");
+            btnRollback.textContent = "↺ Rollback Action";
+            btnRollback.style.background = "#ea580c";
+            btnRollback.style.borderColor = "#ea580c";
+            btnRollback.onclick = () => rollbackRemediationAction(a.id);
+            ctrlTd.appendChild(btnRollback);
+          } else if (a.state === "blocked") {
+            const spanBlocked = document.createElement("span");
+            spanBlocked.style.color = "#ef4444";
+            spanBlocked.style.fontSize = "12px";
+            spanBlocked.textContent = "Cannot execute";
+            ctrlTd.appendChild(spanBlocked);
+          } else if (a.state === "rolled_back") {
+            const spanRb = document.createElement("span");
+            spanRb.style.color = "var(--muted)";
+            spanRb.style.fontSize = "12px";
+            spanRb.textContent = "Rollback Completed";
+            ctrlTd.appendChild(spanRb);
+          } else {
+            const spanOther = document.createElement("span");
+            spanOther.style.color = "var(--muted)";
+            spanOther.textContent = "-";
+            ctrlTd.appendChild(spanOther);
+          }
+          tr.appendChild(ctrlTd);
+
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("fetchRemediations failed:", err);
+      }
+    }
+
+    async function fetchRemediationAudit() {
+      try {
+        const res = await fetch(apiUrl("/api/remediation/audit?limit=25"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        if (!res.ok) return;
+        const json = await res.json();
+        const rows = json.audit || [];
+        const tbody = document.getElementById("remediationAuditBody");
+        if (!tbody) return;
+        tbody.replaceChildren();
+
+        if (rows.length === 0) {
+          const emptyTr = document.createElement("tr");
+          const emptyTd = document.createElement("td");
+          emptyTd.colSpan = 4;
+          emptyTd.style.textAlign = "center";
+          emptyTd.style.color = "var(--muted)";
+          emptyTd.textContent = "No remediation audit records yet.";
+          emptyTr.appendChild(emptyTd);
+          tbody.appendChild(emptyTr);
+          return;
+        }
+
+        rows.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.appendChild(createCell(formatTime(r.at_utc), false, "var(--muted)"));
+          tr.appendChild(createCell(r.actor, true));
+          tr.appendChild(createCell(r.action, false, "#38bdf8"));
+          const detailStr = typeof r.detail === "object" ? JSON.stringify(r.detail) : String(r.detail || "-");
+          tr.appendChild(createCell(detailStr, false, "var(--muted)"));
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("fetchRemediationAudit failed:", err);
+      }
+    }
+
+    async function fetchMockState() {
+      try {
+        const res = await fetch(apiUrl("/api/remediation/mock-state"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        if (!res.ok) return;
+        const json = await res.json();
+        const el = document.getElementById("mockStateViewer");
+        if (el) {
+          el.textContent = JSON.stringify(json.mock_state || {}, null, 2);
+        }
+      } catch (err) {
+        console.error("fetchMockState failed:", err);
+      }
+    }
+
+    async function refreshRemediation() {
+      await Promise.all([
+        fetchRemediations(),
+        fetchRemediationAudit(),
+        fetchMockState(),
+      ]);
+    }
+
+    async function proposeSelectedAction() {
+      const select = document.getElementById("remediationPreset");
+      const val = select ? select.value : "";
+      const parts = val.split("|");
+      const actionName = parts[0];
+      const targetEntity = parts[1];
+      const mode = parts[2];
+
+      const notice = document.getElementById("proposeNotice");
+      if (notice) {
+        notice.style.display = "block";
+        notice.style.color = "var(--primary)";
+        notice.textContent = "Evaluating policy rules and proposing candidate...";
+      }
+
+      const body = {
+        action_name: actionName,
+        target_entity: targetEntity.split(",")[0],
+        actor: "dashboard.operator",
+      };
+
+      if (mode === "multi_host") {
+        body.target_entities = targetEntity.split(",");
+      }
+      if (mode === "business_hours") {
+        body.simulate_business_hours = true;
+      }
+
+      try {
+        const res = await fetch(apiUrl("/api/remediation/propose"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(body),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = { error: res.statusText || `HTTP ${res.status}` };
+        }
+        if (res.ok && !data.error) {
+          const act = data.action;
+          if (notice) {
+            if (data.already_pending || (act && act.already_pending) || (data.message && data.message.includes("already pending"))) {
+              notice.style.color = "#f59e0b";
+              const msg = data.message || (act && act.message) || `already pending (id ${act ? act.id : 'N'})`;
+              notice.textContent = `Action ${msg}. Existing proposal was merged and no duplicate row was added.`;
+            } else if (act && act.state === "blocked") {
+              notice.style.color = "#ef4444";
+              notice.textContent = `✗ Policy Gate Blocked Action: ${act.policy_result}`;
+            } else {
+              notice.style.color = "#22c55e";
+              notice.textContent = `✓ Action #${act.id} proposed and passed policy gate. Awaiting operator approval.`;
+            }
+          }
+          await refreshRemediation();
+        } else {
+          if (notice) {
+            notice.style.color = "#ef4444";
+            notice.textContent = "Error: " + (data.error || data.message || data.detail || res.statusText || "Failed to propose action");
+          }
+        }
+      } catch (err) {
+        if (notice) {
+          notice.style.color = "#ef4444";
+          notice.textContent = "Network error: " + err.message;
+        }
+      }
+    }
+
+    async function approveRemediationAction(actionId) {
+      if (!confirm(`Approve and simulate execution of action #${actionId} as role 'operator'?`)) return;
+      try {
+        const res = await fetch(apiUrl(`/api/remediation/${actionId}/approve`), {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ role: "operator", actor: `operator@${currentTenant}.corp` }),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const data = await res.json();
+        if (res.ok) {
+          alert(`✓ Action #${actionId} approved! Simulated execution succeeded against mock service registry.`);
+          await refreshRemediation();
+        } else {
+          alert(`Approval Rejected: ${data.error || "Unknown error"}`);
+        }
+      } catch (err) {
+        alert("Error approving action: " + err);
+      }
+    }
+
+    async function rejectRemediationAction(actionId) {
+      const reason = prompt("Enter rejection reason:", "Operator rejected execution");
+      if (!reason) return;
+      try {
+        const res = await fetch(apiUrl(`/api/remediation/${actionId}/reject`), {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ actor: `operator@${currentTenant}.corp`, reason: reason }),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        if (res.ok) {
+          await refreshRemediation();
+        } else {
+          const data = await res.json();
+          alert("Rejection failed: " + (data.error || "Unknown error"));
+        }
+      } catch (err) {
+        alert("Error rejecting action: " + err);
+      }
+    }
+
+    async function rollbackRemediationAction(actionId) {
+      if (!confirm(`Execute rollback for action #${actionId}? This will restore the pre-stored snapshot in the mock service registry.`)) return;
+      try {
+        const res = await fetch(apiUrl(`/api/remediation/${actionId}/rollback`), {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ actor: `operator@${currentTenant}.corp` }),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const data = await res.json();
+        if (res.ok) {
+          alert(`↺ Rollback completed! Restored previous mock snapshot for action #${actionId}.`);
+          await refreshRemediation();
+        } else {
+          alert(`Rollback failed: ${data.error || "Unknown error"}`);
+        }
+      } catch (err) {
+        alert("Error during rollback: " + err);
+      }
+    }
+
+    // "Why?" Drawer — Dynamic values rendered via textContent
+    function openDrawer(incidentId) {
+      const inc = cachedIncidents[incidentId];
+      if (!inc) return;
+
+      const rec = (inc.recommendations && inc.recommendations.length > 0) ? inc.recommendations[0] : {};
+      const signals = rec.signals || [];
+      const reasoning = rec.reasoning_path || [];
+      const confidence = rec.confidence || 0.88;
+      const suppressed = inc.suppressed_count || 0;
+      const alertsSummary = `${suppressed + 1} alerts reduced to 1 incident`;
+
+      const content = document.getElementById("drawerContent");
+      content.replaceChildren();
+
+      // Incident ID
+      const dId = document.createElement("div");
+      dId.style.marginBottom = "12px";
+      const lblId = document.createElement("div");
+      lblId.style.fontSize = "13px";
+      lblId.style.color = "var(--muted)";
+      lblId.textContent = "INCIDENT ID";
+      const valId = document.createElement("div");
+      valId.style.fontSize = "15px";
+      valId.style.fontWeight = "700";
+      valId.style.color = "#fff";
+      valId.textContent = inc.id;
+      dId.appendChild(lblId);
+      dId.appendChild(valId);
+      content.appendChild(dId);
+
+      // Title
+      const dTitle = document.createElement("div");
+      dTitle.style.marginBottom = "12px";
+      const lblTitle = document.createElement("div");
+      lblTitle.style.fontSize = "13px";
+      lblTitle.style.color = "var(--muted)";
+      lblTitle.textContent = "TITLE";
+      const valTitle = document.createElement("div");
+      valTitle.style.fontWeight = "600";
+      valTitle.style.fontSize = "14px";
+      valTitle.textContent = inc.title;
+      dTitle.appendChild(lblTitle);
+      dTitle.appendChild(valTitle);
+      content.appendChild(dTitle);
+
+      // Correlation Box
+      const dCorr = document.createElement("div");
+      dCorr.style.background = "rgba(22, 163, 74, 0.15)";
+      dCorr.style.border = "1px solid var(--excellent)";
+      dCorr.style.borderRadius = "4px";
+      dCorr.style.padding = "10px";
+      dCorr.style.marginBottom = "16px";
+      const lblCorr = document.createElement("div");
+      lblCorr.style.fontSize = "12px";
+      lblCorr.style.color = "#86efac";
+      lblCorr.style.fontWeight = "700";
+      lblCorr.textContent = "CORRELATION REDUCTION";
+      const valCorr = document.createElement("div");
+      valCorr.style.fontSize = "14px";
+      valCorr.style.fontWeight = "700";
+      valCorr.style.color = "#fff";
+      valCorr.textContent = alertsSummary;
+      dCorr.appendChild(lblCorr);
+      dCorr.appendChild(valCorr);
+      content.appendChild(dCorr);
+
+      // Root Cause Box
+      const dRc = document.createElement("div");
+      dRc.style.background = "rgba(192, 132, 252, 0.1)";
+      dRc.style.border = "1px solid #c084fc";
+      dRc.style.borderRadius = "4px";
+      dRc.style.padding = "10px";
+      dRc.style.marginBottom = "16px";
+      const lblRc = document.createElement("div");
+      lblRc.style.fontSize = "12px";
+      lblRc.style.color = "#e9d5ff";
+      lblRc.style.fontWeight = "700";
+      lblRc.textContent = "ROOT CAUSE CANDIDATE";
+      const valRc = document.createElement("div");
+      valRc.style.fontSize = "14px";
+      valRc.style.fontWeight = "700";
+      valRc.style.color = "#fff";
+      valRc.textContent = inc.root_cause_candidate || "Upstream network link";
+      dRc.appendChild(lblRc);
+      dRc.appendChild(valRc);
+      content.appendChild(dRc);
+
+      // Confidence Bar
+      const dConf = document.createElement("div");
+      dConf.style.marginBottom = "16px";
+      const dConfHeader = document.createElement("div");
+      dConfHeader.style.display = "flex";
+      dConfHeader.style.justifyContent = "space-between";
+      dConfHeader.style.fontSize = "12px";
+      dConfHeader.style.marginBottom = "4px";
+      const spanConfTitle = document.createElement("span");
+      spanConfTitle.textContent = "AIOps Model Confidence";
+      const strongConfVal = document.createElement("strong");
+      strongConfVal.style.color = "var(--primary)";
+      strongConfVal.textContent = `${(confidence * 100).toFixed(0)}%`;
+      dConfHeader.appendChild(spanConfTitle);
+      dConfHeader.appendChild(strongConfVal);
+      const bgBar = document.createElement("div");
+      bgBar.className = "progress-bar-bg";
+      const fillBar = document.createElement("div");
+      fillBar.className = "progress-bar-fill";
+      fillBar.style.width = `${confidence * 100}%`;
+      bgBar.appendChild(fillBar);
+      dConf.appendChild(dConfHeader);
+      dConf.appendChild(bgBar);
+      content.appendChild(dConf);
+
+      // Contributing Signals
+      const dSig = document.createElement("div");
+      dSig.style.marginBottom = "16px";
+      const lblSig = document.createElement("div");
+      lblSig.style.fontSize = "12px";
+      lblSig.style.color = "var(--muted)";
+      lblSig.style.textTransform = "uppercase";
+      lblSig.style.marginBottom = "6px";
+      lblSig.textContent = "Contributing Signals";
+      const ulSig = document.createElement("ul");
+      ulSig.style.paddingLeft = "18px";
+      ulSig.style.lineHeight = "1.6";
+      ulSig.style.fontSize = "13px";
+      if (signals.length > 0) {
+        signals.forEach(s => {
+          const li = document.createElement("li");
+          const strongSig = document.createElement("strong");
+          strongSig.textContent = typeof s === "object" ? (s.signal || JSON.stringify(s)) : String(s);
+          li.appendChild(strongSig);
+          if (typeof s === "object" && s.weight !== undefined) {
+            const spanWt = document.createTextNode(` (wt: ${s.weight.toFixed(2)})`);
+            li.appendChild(spanWt);
+          }
+          ulSig.appendChild(li);
+        });
+      } else {
+        const li = document.createElement("li");
+        li.textContent = "Primary metric deviation";
+        ulSig.appendChild(li);
+      }
+      dSig.appendChild(lblSig);
+      dSig.appendChild(ulSig);
+      content.appendChild(dSig);
+
+      // Reasoning Path
+      const dReason = document.createElement("div");
+      dReason.style.marginBottom = "16px";
+      const lblReason = document.createElement("div");
+      lblReason.style.fontSize = "12px";
+      lblReason.style.color = "var(--muted)";
+      lblReason.style.textTransform = "uppercase";
+      lblReason.style.marginBottom = "6px";
+      lblReason.textContent = "Reasoning Path";
+      const boxReason = document.createElement("div");
+      boxReason.style.background = "rgba(0,0,0,0.3)";
+      boxReason.style.padding = "10px";
+      boxReason.style.borderRadius = "4px";
+      boxReason.style.fontSize = "13px";
+      if (reasoning.length > 0) {
+        reasoning.forEach((step, idx) => {
+          const stepDiv = document.createElement("div");
+          stepDiv.style.marginBottom = "8px";
+          const strongIdx = document.createElement("strong");
+          strongIdx.textContent = `${idx + 1}. `;
+          stepDiv.appendChild(strongIdx);
+          stepDiv.appendChild(document.createTextNode(String(step)));
+          boxReason.appendChild(stepDiv);
+        });
+      } else {
+        const stepDiv = document.createElement("div");
+        stepDiv.textContent = "Alert grouped within 2-minute sliding correlation window sharing topology dependencies.";
+        boxReason.appendChild(stepDiv);
+      }
+      dReason.appendChild(lblReason);
+      dReason.appendChild(boxReason);
+      content.appendChild(dReason);
+
+      // Action
+      const dAct = document.createElement("div");
+      dAct.style.marginBottom = "16px";
+      const lblAct = document.createElement("div");
+      lblAct.style.fontSize = "12px";
+      lblAct.style.color = "var(--muted)";
+      lblAct.style.textTransform = "uppercase";
+      lblAct.style.marginBottom = "6px";
+      lblAct.textContent = "Recommended Action";
+      const valAct = document.createElement("div");
+      valAct.style.color = "#4ade80";
+      valAct.style.fontWeight = "600";
+      valAct.style.fontSize = "14px";
+      valAct.textContent = rec.action || "Inspect upstream device telemetry.";
+      dAct.appendChild(lblAct);
+      dAct.appendChild(valAct);
+      content.appendChild(dAct);
+
+      document.getElementById("whyDrawer").classList.add("open");
+    }
+
+    function closeDrawer() {
+      document.getElementById("whyDrawer").classList.remove("open");
+    }
+
+    // Chart.js Setup
+    function initCharts() {
+      const chartConfigs = [
+        { id: "chartCpu", label: "CPU Usage (%)", max: 100 },
+        { id: "chartMem", label: "Memory Usage (%)", max: 100 },
+        { id: "chartDisk", label: "Disk Usage (%)", max: 100 },
+        { id: "chartLatency", label: "Latency (ms)", max: null },
+        { id: "chartPacketLoss", label: "Packet Loss (%)", max: 100 },
+        { id: "chartBandwidth", label: "Bandwidth (Mbps)", max: null },
+        { id: "chartConnectivity", label: "Connectivity (%)", max: 100 },
+      ];
+
+      chartConfigs.forEach(cfg => {
+        const ctx = document.getElementById(cfg.id).getContext("2d");
+        charts[cfg.id.replace("chart", "").toLowerCase()] = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Observed",
+                data: [],
+                borderColor: "#38bdf8",
+                backgroundColor: "rgba(56, 189, 248, 0.1)",
+                borderWidth: 2,
+                pointRadius: 2,
+                pointHoverRadius: 4,
+                tension: 0.15,
+                fill: false,
+              },
+              {
+                label: "Baseline Upper",
+                data: [],
+                borderColor: "rgba(148, 163, 184, 0.4)",
+                borderDash: [4, 4],
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false,
+              },
+              {
+                label: "Baseline Lower",
+                data: [],
+                borderColor: "rgba(148, 163, 184, 0.4)",
+                borderDash: [4, 4],
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            scales: {
+              x: {
+                ticks: { color: "#64748b", font: { family: "monospace", size: 12 }, maxRotation: 0 },
+                grid: { color: "#1e293b" }
+              },
+              y: {
+                max: cfg.max,
+                ticks: { color: "#64748b", font: { family: "monospace", size: 12 } },
+                grid: { color: "#1e293b" }
+              }
+            },
+            plugins: {
+              legend: { labels: { color: "#94a3b8", font: { family: "monospace", size: 12 } } }
+            }
+          }
+        });
+      });
+    }
+
+    function updateChart(chart, metricObj) {
+      if (!chart || !metricObj || !metricObj.data) return;
+      const data = metricObj.data;
+      const labels = data.map(d => formatTime(d.time).split(" ").slice(-2, -1)[0] || d.time.substring(11, 19));
+      const values = data.map(d => d.value);
+      const uppers = data.map(d => d.baseline_upper);
+      const lowers = data.map(d => d.baseline_lower);
+      const pointColors = data.map(d => d.is_anomaly ? "#ef4444" : "#38bdf8");
+      const pointRadii = data.map(d => d.is_anomaly ? 5 : 2);
+
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = values;
+      chart.data.datasets[0].pointBackgroundColor = pointColors;
+      chart.data.datasets[0].pointBorderColor = pointColors;
+      chart.data.datasets[0].pointRadius = pointRadii;
+
+      chart.data.datasets[1].data = uppers;
+      chart.data.datasets[2].data = lowers;
+      chart.update();
+    }
+
+    function appendTelemetryPoint(data) {
+      const cat = (data.category || "").toLowerCase();
+      const chartKey = cat === "cpu" ? "cpu" : ((cat === "mem" || cat === "memory") ? "mem" : (cat === "disk" ? "disk" : (cat === "latency" ? "latency" : (cat === "packet_loss" ? "packetloss" : (cat === "bandwidth" ? "bandwidth" : (cat === "connectivity" ? "connectivity" : null))))));
+      if (!chartKey || !charts[chartKey]) return;
+
+      const chart = charts[chartKey];
+      const timeLabel = formatTime(data.event_time_utc).split(" ").slice(-2, -1)[0] || (data.event_time_utc ? data.event_time_utc.substring(11, 19) : "");
+
+      chart.data.labels.push(timeLabel);
+      chart.data.datasets[0].data.push(data.value);
+      if (chart.data.labels.length > 40) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+        if (chart.data.datasets[1]) chart.data.datasets[1].data.shift();
+        if (chart.data.datasets[2]) chart.data.datasets[2].data.shift();
+      }
+      chart.update();
+    }
+
+    // ── Phase 12: Chaos Scenario Injector ─────────────────────────────────────
+    const CHAOS_SCENARIOS = [
+      {
+        num: 1,
+        id: "secret-in-log",
+        name: "Raw log contains a secret",
+        desc: "Injects unredacted auth line containing sensitive credential (password/token/IP) into edge collector stream.",
+        observe: "Run 'collector raw tail' to see secret locally; run 'collector egress tail' to prove it NEVER leaves edge.",
+      },
+      {
+        num: 2,
+        id: "collector-outage",
+        name: "Collector loses SaaS connectivity (and restores)",
+        desc: "Severs network transport between collector and SaaS, queues in SQLite outbox, then auto-drains.",
+        observe: "Run 'collector status' or 'collector buffer' -> notice state changes from 'Online' to 'Buffering'.",
+      },
+      {
+        num: 3,
+        id: "failed-login-burst",
+        name: "Repeated failed logins",
+        desc: "Injects burst of 5 sshd failed root authentication attempts from external IP 185.220.101.5.",
+        observe: "Check Dashboard Security Tab (Auth Failures counter spikes) and SaaS alerts table for security summary.",
+      },
+      {
+        num: 4,
+        id: "latency-rise",
+        name: "Network latency rises",
+        desc: "Injects network transport delay +250ms (baseline 28ms -> ~278ms) across collector link.",
+        observe: "Check Dashboard Network view & Fleet Overview -> latency line chart spikes, health degrades to Fair/Poor.",
+      },
+      {
+        num: 5,
+        id: "baseline-deviation",
+        name: "CPU or memory deviates from baseline",
+        desc: "Injects CPU spike +55% (target ~92%) and memory leak ramp (+0.8%/s continuous increase).",
+        observe: "Check Dashboard Infrastructure Tab -> CPU curve hits >90%, Memory trends upward, CPU anomaly alert fires.",
+      },
+      {
+        num: 6,
+        id: "correlated-alerts",
+        name: "Several alerts relate to one incident",
+        desc: "Triggers multi-signal failure cascade (CPU spike + latency rise + auth burst) correlated to host h_1234abcd.",
+        observe: "Run 'aiopsctl incidents' and 'aiopsctl why <id>' -> notice suppressed alert count > 0 and unified root cause path.",
+      },
+      {
+        num: 7,
+        id: "duplicate-ooo",
+        name: "Duplicate or out-of-order delivery",
+        desc: "Transmits duplicate telemetry payloads and jags timestamps backwards by -3s, -6s, -9s.",
+        observe: "SaaS drops duplicates (0 duplicates stored); dashboard charts remain continuous and strictly sorted.",
+      },
+      {
+        num: 8,
+        id: "remediation-proposed",
+        name: "Remediation is proposed",
+        desc: "Proposes governed action 'restart_service' on target entity srv-edge-01 awaiting operator approval.",
+        observe: "Open Dashboard Tab 7 (Governed Remediation) -> see proposed action card with 'awaiting_approval' status.",
+      },
+    ];
+
+    function logChaos(msg) {
+      const consoleEl = document.getElementById("chaosConsole");
+      if (!consoleEl) return;
+      const ts = new Date().toISOString();
+      consoleEl.textContent = `[${ts}] ${msg}\n` + consoleEl.textContent;
+    }
+
+    function clearChaosConsole() {
+      const consoleEl = document.getElementById("chaosConsole");
+      if (consoleEl) consoleEl.textContent = "[Cleared] Ready for next scenario.\n";
+    }
+
+    function renderScenariosGrid() {
+      const grid = document.getElementById("scenariosGrid");
+      if (!grid || grid.children.length > 0) return;
+
+      CHAOS_SCENARIOS.forEach(scen => {
+        const card = document.createElement("div");
+        card.className = "tile";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.justifyContent = "space-between";
+        card.style.padding = "14px";
+        card.style.background = "var(--panel)";
+        card.style.border = "1px solid var(--border)";
+        card.style.borderRadius = "8px";
+
+        const top = document.createElement("div");
+        const badge = document.createElement("span");
+        badge.style.display = "inline-block";
+        badge.style.background = "rgba(56, 189, 248, 0.15)";
+        badge.style.color = "var(--primary)";
+        badge.style.fontSize = "12px";
+        badge.style.fontWeight = "bold";
+        badge.style.padding = "3px 8px";
+        badge.style.borderRadius = "4px";
+        badge.style.marginBottom = "8px";
+        badge.textContent = `SCENARIO #${scen.num}`;
+
+        const title = document.createElement("h4");
+        title.style.margin = "0 0 6px 0";
+        title.style.fontSize = "15px";
+        title.style.color = "var(--text)";
+        title.textContent = scen.name;
+
+        const desc = document.createElement("p");
+        desc.style.fontSize = "13px";
+        desc.style.color = "var(--muted)";
+        desc.style.margin = "0 0 10px 0";
+        desc.style.lineHeight = "1.45";
+        desc.textContent = scen.desc;
+
+        const obs = document.createElement("div");
+        obs.style.fontSize = "12px";
+        obs.style.color = "#a5b4fc";
+        obs.style.background = "rgba(99, 102, 241, 0.08)";
+        obs.style.padding = "6px 8px";
+        obs.style.borderRadius = "4px";
+        obs.style.marginBottom = "12px";
+        obs.textContent = "🔍 " + scen.observe;
+
+        top.appendChild(badge);
+        top.appendChild(title);
+        top.appendChild(desc);
+        top.appendChild(obs);
+
+        const btn = document.createElement("button");
+        btn.textContent = `⚡ Inject Scenario ${scen.num}`;
+        btn.style.width = "100%";
+        btn.style.padding = "8px 12px";
+        btn.style.fontWeight = "bold";
+        btn.style.borderRadius = "6px";
+        btn.style.cursor = "pointer";
+        btn.style.border = "none";
+        btn.style.background = "linear-gradient(135deg, #0284c7, #2563eb)";
+        btn.style.color = "white";
+        btn.onclick = () => triggerScenario(scen.num);
+
+        card.appendChild(top);
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
+    }
+
+    async function triggerScenario(num) {
+      logChaos(`[Triggering] Scenario #${num}...`);
+      try {
+        const res = await fetch(apiUrl("/api/scenario/inject"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ scenario: num, collector: "col-acme-eu-1", tenant: currentTenant }),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = { error: res.statusText || `HTTP ${res.status}` };
+        }
+        if (res.ok && !data.error) {
+          logChaos(`✓ INJECTED Scenario #${num} (${data.scenario_name || ""})\n  UTC: ${data.injected_at_utc || ""}\n  Narration: "${data.narration || ""}"\n  Observe: ${data.where_to_observe || ""}`);
+        } else {
+          const errMsg = data.error || data.message || data.detail || res.statusText || `HTTP ${res.status}`;
+          logChaos(`✗ FAILED: ${errMsg}`);
+        }
+      } catch (err) {
+        logChaos(`✗ Error contacting API: ${err.message}`);
+      }
+    }
+
+    async function triggerReset() {
+      logChaos("[Reset] Restoring normal baseline across simulator and edge...");
+      try {
+        const res = await fetch(apiUrl("/api/scenario/reset"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = { error: res.statusText || `HTTP ${res.status}` };
+        }
+        if (res.ok && !data.error) {
+          logChaos(`✓ BASELINE RESTORED at ${data.reset_at_utc || new Date().toISOString()}.\n  All chaos cleared. Normal diurnal telemetry active.`);
+        } else {
+          const errMsg = data.error || data.message || data.detail || res.statusText || `HTTP ${res.status}`;
+          logChaos(`✗ Reset failed: ${errMsg}`);
+        }
+      } catch (err) {
+        logChaos(`✗ Reset error: ${err.message}`);
+      }
+    }
+
+    async function triggerRehearsal() {
+      logChaos("[Rehearsal] Starting sequential rehearsal of all 8 scenarios...");
+      try {
+        const res = await fetch(apiUrl("/api/scenario/rehearsal"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {
+          data = { error: res.statusText || `HTTP ${res.status}` };
+        }
+        if (res.ok && !data.error) {
+          logChaos(`✓ REHEARSAL COMPLETE: ${data.scenarios_executed || 8} scenarios executed in order.\n  Finished at ${data.completed_utc || new Date().toISOString()}. Platform reset to baseline.`);
+        } else {
+          const errMsg = data.error || data.message || data.detail || res.statusText || `HTTP ${res.status}`;
+          logChaos(`✗ Rehearsal failed: ${errMsg}`);
+        }
+      } catch (err) {
+        logChaos(`✗ Rehearsal error: ${err.message}`);
+      }
+    }
+
+    // ── Tab 10: Egress Proof & Side-by-Side Audit Logic ────────────────────────
+    let cachedEgressRecords = [];
+    let activeEgressPayloadId = null;
+
+    async function loadEgressRecords() {
+      try {
+        const res = await fetch(apiUrl("/api/egress/records?limit=25"), { headers: getAuthHeaders() });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const json = await res.json();
+        const records = json.records || [];
+        cachedEgressRecords = records;
+
+        const tbody = document.getElementById("egressLogsBody");
+        if (!tbody) return;
+        tbody.replaceChildren();
+
+        if (records.length === 0) {
+          const tr = document.createElement("tr");
+          const td = document.createElement("td");
+          td.colSpan = 7;
+          td.style.textAlign = "center";
+          td.style.color = "var(--muted)";
+          td.style.padding = "20px";
+          td.textContent = "No egress logs found yet. Click '⚡ Inject Demo Secret & Prove Egress' above to generate proof.";
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+          return;
+        }
+
+        records.forEach((rec, idx) => {
+          const tr = document.createElement("tr");
+          if (rec.payload_id === activeEgressPayloadId) {
+            tr.style.background = "rgba(56, 189, 248, 0.15)";
+          }
+          tr.appendChild(createCell(rec.seq || (records.length - idx), false, "var(--muted)"));
+          tr.appendChild(createCell(formatDate(rec.ts_utc)));
+          tr.appendChild(createCell(rec.payload_id, true, "var(--primary)"));
+
+          // Status badge
+          const tdStatus = document.createElement("td");
+          const badge = document.createElement("span");
+          badge.className = rec.status === "acked" ? "badge badge-excellent" : "badge badge-fair";
+          badge.textContent = rec.status || "acked";
+          tdStatus.appendChild(badge);
+          tr.appendChild(tdStatus);
+
+          // SHA-256
+          const shaShort = rec.sha256 ? rec.sha256.substring(0, 16) + "..." : "-";
+          tr.appendChild(createCell(shaShort, false, "#fbbf24"));
+
+          // Ack Hash
+          const ackShort = rec.saas_ack_hash ? rec.saas_ack_hash.substring(0, 16) + "..." : shaShort;
+          tr.appendChild(createCell(ackShort, false, "#60a5fa"));
+
+          // Action Button
+          const tdAction = document.createElement("td");
+          tdAction.style.textAlign = "center";
+          const btn = document.createElement("button");
+          btn.className = "btn-secondary";
+          btn.style.fontSize = "12px";
+          btn.style.padding = "4px 8px";
+          btn.textContent = "🔍 Compare";
+          btn.onclick = () => inspectEgressPayload(rec.payload_id);
+          tdAction.appendChild(btn);
+          tr.appendChild(tdAction);
+
+          tbody.appendChild(tr);
+        });
+
+        // Auto-select latest record if none selected or if active one not in list
+        const latestId = records[0] ? records[0].payload_id : null;
+        if ((!activeEgressPayloadId || !records.find(r => r.payload_id === activeEgressPayloadId)) && latestId) {
+          inspectEgressPayload(latestId);
+        }
+      } catch (err) {
+        console.error("Error loading egress records:", err);
+      }
+    }
+
+    async function inspectEgressPayload(payloadId) {
+      activeEgressPayloadId = payloadId;
+      const curPidEl = document.getElementById("currentEgressPid");
+      if (curPidEl) curPidEl.textContent = payloadId;
+
+      try {
+        const res = await fetch(apiUrl("/api/egress/show?payload_id=" + encodeURIComponent(payloadId)), {
+          headers: getAuthHeaders(),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const data = await res.json();
+
+        const timeEl = document.getElementById("currentEgressTime");
+        if (timeEl) timeEl.textContent = "UTC Recorded: " + formatDate(data.ts_utc);
+
+        const rawDisp = document.getElementById("egressRawDisplay");
+        if (rawDisp) {
+          rawDisp.textContent = data.raw_source_line || "No raw source line found.";
+        }
+
+        const jsonDisp = document.getElementById("egressJsonDisplay");
+        if (jsonDisp) {
+          const formatted = typeof data.exact_json_egressed === "string"
+            ? data.exact_json_egressed
+            : JSON.stringify(data.exact_json_egressed, null, 2);
+          jsonDisp.textContent = formatted;
+        }
+
+        const shaEl = document.getElementById("egressShaText");
+        if (shaEl) shaEl.textContent = data.sha256 || "-";
+
+        const ackEl = document.getElementById("egressAckShaText");
+        if (ackEl) ackEl.textContent = data.saas_ack_hash || "-";
+
+        const badgeEl = document.getElementById("egressVerificationBadge");
+        const matchEl = document.getElementById("egressMatchStatus");
+        if (data.hash_matches) {
+          if (badgeEl) {
+            badgeEl.className = "badge badge-excellent";
+            badgeEl.textContent = "✓ hash matches SaaS (verified cryptographic ACK: " + (data.sha256 ? data.sha256.substring(0, 12) + "..." : "") + ")";
+          }
+          if (matchEl) {
+            matchEl.textContent = "VERIFIED ✓ (HMAC-SHA256 Match)";
+            matchEl.style.color = "var(--excellent)";
+          }
+        } else {
+          if (badgeEl) {
+            badgeEl.className = "badge badge-fair";
+            badgeEl.textContent = "Awaiting verification";
+          }
+          if (matchEl) {
+            matchEl.textContent = "AWAITING ACK";
+            matchEl.style.color = "var(--fair)";
+          }
+        }
+
+        // Highlight active table row
+        const tbody = document.getElementById("egressLogsBody");
+        if (tbody) {
+          Array.from(tbody.children).forEach(tr => {
+            const pidCell = tr.children[2];
+            if (pidCell && pidCell.textContent.includes(payloadId)) {
+              tr.style.background = "rgba(56, 189, 248, 0.15)";
+            } else {
+              tr.style.background = "";
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error inspecting egress payload:", err);
+      }
+    }
+
+    async function injectDemoSecretAndProve() {
+      try {
+        const res = await fetch(apiUrl("/api/egress/inject"), {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+        if (res.status === 401) { showUnauthorized(); return; }
+        if (res.status === 403) { showForbidden(); return; }
+        const data = await res.json();
+        if (data.status === "success" && data.payload_id) {
+          await loadEgressRecords();
+          inspectEgressPayload(data.payload_id);
+        }
+      } catch (err) {
+        console.error("Error injecting demo secret:", err);
+      }
+    }
+  </script>
+</body>
+</html>

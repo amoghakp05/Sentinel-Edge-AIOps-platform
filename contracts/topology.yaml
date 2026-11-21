@@ -1,0 +1,88 @@
+# ============================================================
+# Topology Mapping: Service -> Host -> Network Device
+# 2 Tenants, 3 Collectors, 2 Regions
+# ============================================================
+
+tenants:
+  - id: acme
+    name: "Acme Financial"
+    region: eu-central-1
+    collectors:
+      - id: col-acme-eu-1
+        name: "Acme Frankfurt Core"
+        source_tz: "Europe/Berlin"
+        host:
+          hostname: "app-node-01.fra.acme.internal"
+          ip: "10.10.1.15"
+          os: "Linux 6.1"
+        network_device:
+          name: "sw-core-fra-01"
+          mgmt_ip: "10.10.0.1"
+          interface: "ge-0/0/1"
+        services:
+          - name: "auth-gateway"
+            port: 8443
+            protocol: "https"
+          - name: "payment-processor"
+            port: 9090
+            protocol: "grpc"
+        base_metrics:
+          cpu: 35.0
+          memory: 52.0
+          disk: 60.0
+          latency: 28.0
+          packet_loss: 0.1
+          bandwidth: 450.0
+
+      - id: col-acme-eu-2
+        name: "Acme London Edge"
+        source_tz: "Europe/London"
+        host:
+          hostname: "edge-gw-01.lon.acme.internal"
+          ip: "10.11.2.20"
+          os: "Linux 6.1"
+        network_device:
+          name: "rtr-edge-lon-01"
+          mgmt_ip: "10.11.0.1"
+          interface: "xe-0/1/0"
+        services:
+          - name: "web-proxy"
+            port: 443
+            protocol: "https"
+        base_metrics:
+          cpu: 28.0
+          memory: 45.0
+          disk: 50.0
+          latency: 22.0
+          packet_loss: 0.05
+          bandwidth: 600.0
+
+  - id: globex
+    name: "Globex Logistics"
+    region: ap-south-1
+    collectors:
+      - id: col-globex-in-1
+        name: "Globex Bengaluru DC"
+        source_tz: "Asia/Kolkata"
+        host:
+          hostname: "tracking-srv-01.blr.globex.internal"
+          ip: "10.20.1.50"
+          os: "Linux 6.1"
+        network_device:
+          name: "sw-agg-blr-01"
+          mgmt_ip: "10.20.0.1"
+          interface: "et-0/0/48"
+        services:
+          - name: "telemetry-ingest"
+            port: 8080
+            protocol: "http"
+          - name: "dispatch-db"
+            port: 5432
+            protocol: "tcp"
+        base_metrics:
+          cpu: 42.0
+          memory: 58.0
+          disk: 68.0
+          latency: 38.0
+          packet_loss: 0.2
+          bandwidth: 320.0

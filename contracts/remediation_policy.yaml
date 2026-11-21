@@ -1,0 +1,64 @@
+# contracts/remediation_policy.yaml
+# Governed Remediation Policy Configuration
+#
+# Rules enforced by saas/remediation.py:
+# 1. Action allow-list: only explicitly enumerated actions may be proposed/executed.
+# 2. Must be reversible: each action must specify a rollback action.
+# 3. Max scope: maximum 1 host/entity per remediation action.
+# 4. Risky actions blocked during business hours (09:00 - 17:00 UTC, Mon-Fri).
+# 5. Role required for approval: "operator" or higher.
+
+version: 1
+
+general_rules:
+  must_be_reversible: true
+  max_scope:
+    type: "single_host"
+    max_entities: 1
+  required_role: "operator"
+  business_hours:
+    timezone: "UTC"
+    start_hour: 9
+    end_hour: 17
+    active_days: [0, 1, 2, 3, 4] # Monday=0 through Friday=4
+
+allowed_actions:
+  restart_service:
+    description: "Graceful restart of a service process or container on an affected host"
+    reversible: true
+    is_risky: true
+    rollback_action: "restore_service_state"
+    allowed_scopes: ["host", "container"]
+    parameters:
+      - service_name
+      - host_id
+
+  reroute_traffic:
+    description: "Reroute network traffic away from a degraded uplink or switch interface"
+    reversible: true
+    is_risky: true
+    rollback_action: "restore_traffic_route"
+    allowed_scopes: ["network_device", "interface"]
+    parameters:
+      - device_id
+      - interface_id
+      - target_uplink
+
+  rate_limit_source:
+    description: "Temporarily apply rate limiting to an abusive source IP or host"
+    reversible: true
+    is_risky: false
+    rollback_action: "remove_rate_limit"
+    allowed_scopes: ["host", "ip"]
+    parameters:
+      - target_ref
+      - max_req_per_s
+
+  flush_cache:
+    description: "Flush transient in-memory or Redis caches on an affected host"
+    reversible: true
+    is_risky: false
+    rollback_action: "noop_cache_flush"
+    allowed_scopes: ["host"]
+    parameters:
+      - host_id
