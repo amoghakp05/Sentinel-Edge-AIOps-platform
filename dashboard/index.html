@@ -344,8 +344,9 @@
       </div>
       <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border); flex-wrap: wrap;">
         <label style="color: var(--muted); font-size: 13px;">VIEWER TOKEN:</label>
-        <input type="password" id="viewerTokenInput" placeholder="Paste tenant token..." style="width: 150px; padding: 5px 8px; font-size: 13px; background: #0f172a; border: 1px solid var(--border); color: #fff; border-radius: 3px; min-height: 32px;">
-        <button onclick="saveViewerToken()" style="padding: 5px 10px; font-size: 13px; background: var(--primary); color: #000; border: none; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Login</button>
+        <input type="password" id="viewerTokenInput" placeholder="Paste tenant token..." onkeydown="if(event.key==='Enter') saveViewerToken()" style="width: 170px; padding: 5px 8px; font-size: 13px; background: #0f172a; border: 1px solid var(--border); color: #fff; border-radius: 3px; min-height: 32px;">
+        <button type="button" onclick="const inp=document.getElementById('viewerTokenInput'); const isPass=inp.type==='password'; inp.type=isPass?'text':'password'; this.textContent=isPass?'🔒':'👁';" title="Toggle Token Visibility" style="padding: 4px 8px; font-size: 12px; background: #1e293b; border: 1px solid var(--border); color: #94a3b8; border-radius: 3px; cursor: pointer; min-height: 32px;">👁</button>
+        <button onclick="saveViewerToken()" style="padding: 5px 12px; font-size: 13px; background: var(--primary); color: #000; border: none; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Login</button>
         <button onclick="logoutViewer()" style="padding: 5px 10px; font-size: 13px; background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid #ef4444; border-radius: 3px; cursor: pointer; font-weight: 700; min-height: 32px;">Logout</button>
         <span id="authBadge" class="badge badge-fair">Token Required</span>
       </div>
@@ -1040,10 +1041,14 @@
     let charts = {};
     let cachedIncidents = {};
 
-    // Dynamic viewer credentials managed via sessionStorage with input fallback
+    // Dynamic viewer credentials managed via sessionStorage & localStorage with input fallback
     function getViewerToken() {
-      const fromStorage = sessionStorage.getItem("sentinel_viewer_token");
-      if (fromStorage) return fromStorage;
+      const fromSession = sessionStorage.getItem("sentinel_viewer_token_" + currentTenant) || sessionStorage.getItem("sentinel_viewer_token");
+      if (fromSession) return fromSession;
+      try {
+        const fromLocal = localStorage.getItem("sentinel_viewer_token_" + currentTenant) || localStorage.getItem("sentinel_viewer_token");
+        if (fromLocal) return fromLocal;
+      } catch (e) {}
       const input = document.getElementById("viewerTokenInput");
       return (input && input.value && input.value.trim()) ? input.value.trim() : "";
     }
@@ -1075,6 +1080,11 @@
 
     function clearAllData(reason = "Login required") {
       sessionStorage.removeItem("sentinel_viewer_token");
+      sessionStorage.removeItem("sentinel_viewer_token_" + currentTenant);
+      try {
+        localStorage.removeItem("sentinel_viewer_token");
+        localStorage.removeItem("sentinel_viewer_token_" + currentTenant);
+      } catch (e) {}
 
       // 1. Close active SSE connection
       if (sseSource) {
@@ -1187,7 +1197,14 @@
 
     async function saveViewerToken() {
       const input = document.getElementById("viewerTokenInput");
-      const val = input ? input.value.trim() : "";
+      let val = input ? input.value.trim() : "";
+      if (val.includes("=")) {
+        val = val.split("=").pop().trim();
+      }
+      val = val.replace(/^["']|["']$/g, "").trim();
+      if (input && input.value !== val) {
+        input.value = val;
+      }
       if (!val) {
         clearAllData("Login required");
         updateAuthBadge("Token Required", "badge-fair");
@@ -1197,13 +1214,34 @@
       updateAuthBadge("Validating...", "badge-fair");
 
       try {
-        const res = await fetch(apiUrl("/api/whoami"), {
+        let res = await fetch(apiUrl("/api/whoami"), {
           headers: {
             "X-Api-Key": val,
             "X-Tenant-Id": currentTenant,
             "Content-Type": "application/json",
           },
         });
+
+        // If 403, check if the token belongs to the other tenant
+        if (res.status === 403) {
+          const checkRes = await fetch(apiUrl("/api/whoami"), {
+            headers: {
+              "X-Api-Key": val,
+              "Content-Type": "application/json",
+            },
+          });
+          if (checkRes.ok) {
+            const whoData = await checkRes.json();
+            if (whoData.tenant_id && whoData.tenant_id !== currentTenant) {
+              currentTenant = whoData.tenant_id;
+              const sel = document.getElementById("tenantSelect");
+              if (sel) sel.value = currentTenant;
+              const regLabel = document.getElementById("regionLabel");
+              if (regLabel) regLabel.innerText = currentTenant === "globex" ? "Region: IN" : "Region: EU";
+              res = checkRes;
+            }
+          }
+        }
 
         if (res.status === 401) {
           showUnauthorized("Unauthorized: Invalid viewer token (401)");
@@ -1224,6 +1262,11 @@
 
         // Successfully validated: save strictly this validated token
         sessionStorage.setItem("sentinel_viewer_token", val);
+        sessionStorage.setItem("sentinel_viewer_token_" + currentTenant, val);
+        try {
+          localStorage.setItem("sentinel_viewer_token", val);
+          localStorage.setItem("sentinel_viewer_token_" + currentTenant, val);
+        } catch (e) {}
         updateAuthBadge("Authenticated", "badge-excellent");
         initSSE();
         refreshAll();
@@ -1332,6 +1375,9 @@
       if (latEl) latEl.innerText = "no data";
 
       const tok = getViewerToken();
+      const inp = document.getElementById("viewerTokenInput");
+      if (inp) inp.value = tok;
+
       if (!tok) {
         clearAllData("Login required");
         return;
