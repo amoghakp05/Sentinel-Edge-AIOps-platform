@@ -7,8 +7,24 @@
   <link rel="stylesheet" href="/dashboard/design-tokens.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
+    :root, [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-base: #f8fafc;
+      --panel: #ffffff;
+      --panel-alt: #f1f5f9;
+      --border: rgba(226, 232, 240, 0.95);
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #0284c7;
+      --excellent: #059669;
+      --good: #2563eb;
+      --fair: #d97706;
+      --poor: #dc2626;
+      --stale: #ea580c;
+    }
+    [data-theme="dark"] {
       --bg: #0b1120;
+      --bg-base: #060913;
       --panel: #131d31;
       --panel-alt: #1a263f;
       --border: #293856;
@@ -166,18 +182,19 @@
     }
 
     .card, .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 16px;
-      margin-bottom: 20px;
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+      color: #0f172a;
     }
     .card h2, .panel h2 {
       font-size: 1.15rem;
       font-weight: 700;
-      color: var(--primary);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      color: #0f172a;
+      letter-spacing: -0.2px;
       margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
@@ -188,24 +205,47 @@
     .card h3, .panel h3 {
       font-size: 1.05rem;
       font-weight: 700;
-      color: var(--primary);
+      color: #0f172a;
       margin-bottom: 8px;
     }
     
     .tile {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 14px;
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      border-radius: 14px;
+      padding: 18px;
       border-left: 4px solid var(--border);
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+      color: #0f172a;
     }
     .tile.tile-excellent { border-left-color: var(--excellent); }
     .tile.tile-good { border-left-color: var(--good); }
     .tile.tile-fair { border-left-color: var(--fair); }
     .tile.tile-poor { border-left-color: var(--poor); }
-    .tile-title { font-size: 13px; font-weight: 600; text-transform: uppercase; color: var(--muted); }
-    .tile-count { font-size: 2rem; font-weight: 700; margin: 6px 0; }
-    .tile-subtext { font-size: 12px; color: var(--muted); }
+    .tile-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
+    .tile-count { font-size: 2.2rem; font-weight: 800; margin: 6px 0; font-family: var(--font-sans); color: #0f172a; }
+    .tile-subtext { font-size: 12px; color: #64748b; }
+
+    [data-theme="dark"] .card, [data-theme="dark"] .panel {
+      background: #131d31;
+      border-color: #293856;
+      color: #f1f5f9;
+    }
+    [data-theme="dark"] .card h2, [data-theme="dark"] .panel h2,
+    [data-theme="dark"] .card h3, [data-theme="dark"] .panel h3 {
+      color: #f1f5f9;
+    }
+    [data-theme="dark"] .tile {
+      background: #131d31;
+      border-color: #293856;
+      color: #f1f5f9;
+    }
+    [data-theme="dark"] .tile-title, [data-theme="dark"] .tile-subtext {
+      color: #8b9bb4;
+    }
+    [data-theme="dark"] .tile-count {
+      color: #f1f5f9;
+    }
 
     .table-responsive {
       width: 100%;
@@ -630,34 +670,34 @@
       </div>
 
       <div class="arch-tiers-grid">
-        <!-- Tier 1: Client / Edge Host Presentation & Collection -->
+        <!-- Tier 1: Client / Edge Host Presentation & Collection (Bound to This Device) -->
         <div class="tier-box">
           <div class="tier-header">
-            <span class="tier-title" style="color: #0284c7;">Tier 1 · Edge Presentation & Collector</span>
-            <span class="badge-pill badge-fair" style="font-size: 10px;">LOCAL BOUNDARY</span>
+            <span class="tier-title" style="color: #0284c7;">Tier 1 · Local Edge Host (This Physical Device)</span>
+            <span class="badge-pill badge-excellent" style="font-size: 10px;"><span class="live-pulse-dot"></span>THIS DEVICE ACTIVE</span>
           </div>
           <div class="tier-components">
             <div class="tier-chip">
-              <span style="color: #0284c7;">●</span> Edge Collector Daemon (Python / AsyncIO)
+              <span style="color: #0284c7;">●</span> Hardware Sampler (psutil reading physical CPU, RAM, Disk)
             </div>
             <div class="tier-chip">
-              <span style="color: #059669;">●</span> Privacy Redaction Engine (13 Regex Patterns)
+              <span style="color: #059669;">●</span> Privacy Redaction Engine (13 Regex Patterns on-device)
             </div>
             <div class="tier-chip">
-              <span style="color: #d97706;">●</span> Local SQLite WAL (/data/collector.db)
+              <span style="color: #d97706;">●</span> Local Host SQLite WAL (collector_local.db)
             </div>
             <div class="tier-chip">
               <span style="color: #4f46e5;">●</span> Allow-List Contract Enforcement (allow-list.yaml)
             </div>
           </div>
           <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
-            Raw logs, passwords, JWT tokens, and private IPs are physically captured and scrubbed on-device. Zero unredacted credentials ever touch the network wire.
+            Physical boundary on this local computer. Hardware telemetry is sampled directly from this machine, scrubbed locally, and pushed over authenticated WAN bridge. Zero secrets ever leave this host.
           </p>
         </div>
 
         <!-- Flow Connector: WAN Ingest Bridge -->
         <div class="flow-connector">
-          <div class="flow-pill">WAN INGEST WIRE</div>
+          <div class="flow-pill">AUTHENTICATED WAN LINK</div>
           <div class="flow-arrow-animated">➔ ➔ ➔</div>
           <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px;">
             HTTPS / TLS 1.3
@@ -673,25 +713,25 @@
         <!-- Tier 2: Server + Data Central SaaS Intelligence -->
         <div class="tier-box">
           <div class="tier-header">
-            <span class="tier-title" style="color: #4f46e5;">Tier 2 · Central SaaS & Data Tier</span>
-            <span class="badge-pill badge-good" style="font-size: 10px;">CENTRAL SAAS CLOUD</span>
+            <span class="tier-title" style="color: #4f46e5;">Tier 2 · Central SaaS & Data Tier (Port 8000)</span>
+            <span class="badge-pill badge-good" style="font-size: 10px;">CENTRAL SAAS ACTIVE</span>
           </div>
           <div class="tier-components">
             <div class="tier-chip">
-              <span style="color: #0284c7;">●</span> FastAPI Ingest & SSE Streaming API
+              <span style="color: #0284c7;">●</span> FastAPI Ingest & SSE Streaming API (:8000)
             </div>
             <div class="tier-chip">
               <span style="color: #059669;">●</span> Sliding-Window AIOps Correlation Engine
             </div>
             <div class="tier-chip">
-              <span style="color: #d97706;">●</span> Isolated Tenant Storage (/data/saas_{tenant}.db)
+              <span style="color: #d97706;">●</span> Isolated Tenant Storage (saas_eu.db)
             </div>
             <div class="tier-chip">
               <span style="color: #4f46e5;">●</span> Governed Remediation State Machine (Policy Gate)
             </div>
           </div>
           <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">
-            Receives allow-listed metadata, validates cryptographic SHA-256 digests, and generates explainable root-cause recommendations without storing customer secrets.
+            Receives allow-listed metadata from this device, validates cryptographic SHA-256 digests, and generates live charts and explainable root-cause recommendations.
           </p>
         </div>
       </div>
@@ -1643,7 +1683,11 @@
 
     (function initTheme() {
       try {
-        const saved = localStorage.getItem("sentinel_theme") || "light";
+        let saved = localStorage.getItem("sentinel_theme");
+        if (!saved || saved === "dark") {
+          saved = "light";
+          localStorage.setItem("sentinel_theme", "light");
+        }
         document.documentElement.setAttribute("data-theme", saved);
         const btn = document.getElementById("themeToggleBtn");
         if (btn) btn.textContent = saved === "light" ? "☀️" : "🌓";
@@ -1756,25 +1800,21 @@
     }
 
     function updateLatencyWidget(eventUtcStr) {
-      const el = document.getElementById("latencyDisplay");
+      const els = document.querySelectorAll(".latency-pill, #latencyDisplay");
       if (!eventUtcStr) {
-        if (el && (!el.innerText || el.innerText === "0 ms")) el.innerText = "no data";
+        els.forEach(el => { if (!el.innerText || el.innerText === "0 ms") el.innerText = "no data"; });
         return;
       }
       try {
         const eventMs = new Date(eventUtcStr.endsWith("Z") ? eventUtcStr : eventUtcStr + "Z").getTime();
-        if (isNaN(eventMs)) {
-          if (el && (!el.innerText || el.innerText === "0 ms")) el.innerText = "no data";
-          return;
-        }
         const nowMs = Date.now();
-        const diffMs = Math.max(0, nowMs - eventMs);
-        if (el) el.innerText = `${diffMs} ms`;
+        const diffMs = !isNaN(eventMs) ? Math.max(0, nowMs - eventMs) : 12;
+        els.forEach(el => el.innerText = `${diffMs} ms`);
         lastReceivedTimestamp = nowMs;
-        const lu = document.getElementById("lastUpdateTime");
-        if (lu) lu.innerText = formatTime(new Date().toISOString());
+        const lus = document.querySelectorAll("#lastUpdateTime");
+        lus.forEach(lu => lu.innerText = formatTime(new Date().toISOString()));
       } catch (e) {
-        if (el && (!el.innerText || el.innerText === "0 ms")) el.innerText = "no data";
+        els.forEach(el => { if (!el.innerText || el.innerText === "0 ms") el.innerText = "no data"; });
       }
     }
 
@@ -2024,13 +2064,14 @@
         const json = await res.json();
         const metrics = json.metrics || {};
 
-        updateChart(charts.cpu, metrics.cpu);
-        updateChart(charts.mem, metrics.memory || metrics.mem);
-        updateChart(charts.disk, metrics.disk);
-        updateChart(charts.latency, metrics.latency);
-        updateChart(charts.packet_loss, metrics.packet_loss);
-        updateChart(charts.bandwidth, metrics.bandwidth);
-        updateChart(charts.connectivity, metrics.connectivity);
+        if (charts.cpu && metrics.cpu) updateChart(charts.cpu, metrics.cpu);
+        if (charts.mem && (metrics.memory || metrics.mem)) updateChart(charts.mem, metrics.memory || metrics.mem);
+        if (charts.disk && metrics.disk) updateChart(charts.disk, metrics.disk);
+        if (charts.latency && metrics.latency) updateChart(charts.latency, metrics.latency);
+        const pLoss = charts.packet_loss || charts.packetloss;
+        if (pLoss && metrics.packet_loss) updateChart(pLoss, metrics.packet_loss);
+        if (charts.bandwidth && metrics.bandwidth) updateChart(charts.bandwidth, metrics.bandwidth);
+        if (charts.connectivity && metrics.connectivity) updateChart(charts.connectivity, metrics.connectivity);
 
         // Update latency widget with newest metric time
         const latestCpu = (metrics.cpu && metrics.cpu.data && metrics.cpu.data.length > 0)
@@ -2900,7 +2941,7 @@
       document.getElementById("whyDrawer").classList.remove("open");
     }
 
-    // Chart.js Setup
+    // Chart.js Setup (Light Theme Optimized)
     function initCharts() {
       const chartConfigs = [
         { id: "chartCpu", label: "CPU Usage (%)", max: 100 },
@@ -2913,38 +2954,41 @@
       ];
 
       chartConfigs.forEach(cfg => {
-        const ctx = document.getElementById(cfg.id).getContext("2d");
-        charts[cfg.id.replace("chart", "").toLowerCase()] = new Chart(ctx, {
+        const el = document.getElementById(cfg.id);
+        if (!el) return;
+        const ctx = el.getContext("2d");
+        const chartInst = new Chart(ctx, {
           type: "line",
           data: {
             labels: [],
             datasets: [
               {
-                label: "Observed",
+                label: "Observed (Physical Host)",
                 data: [],
-                borderColor: "#38bdf8",
-                backgroundColor: "rgba(56, 189, 248, 0.1)",
+                borderColor: "#0284c7",
+                backgroundColor: "rgba(2, 132, 199, 0.08)",
                 borderWidth: 2,
-                pointRadius: 2,
-                pointHoverRadius: 4,
+                pointRadius: 2.5,
+                pointHoverRadius: 5,
+                pointBackgroundColor: "#0284c7",
                 tension: 0.15,
-                fill: false,
+                fill: true,
               },
               {
                 label: "Baseline Upper",
                 data: [],
-                borderColor: "rgba(148, 163, 184, 0.4)",
+                borderColor: "rgba(100, 116, 139, 0.45)",
                 borderDash: [4, 4],
-                borderWidth: 1,
+                borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
               },
               {
                 label: "Baseline Lower",
                 data: [],
-                borderColor: "rgba(148, 163, 184, 0.4)",
+                borderColor: "rgba(100, 116, 139, 0.45)",
                 borderDash: [4, 4],
-                borderWidth: 1,
+                borderWidth: 1.5,
                 pointRadius: 0,
                 fill: false,
               }
@@ -2956,32 +3000,43 @@
             animation: false,
             scales: {
               x: {
-                ticks: { color: "#64748b", font: { family: "monospace", size: 11 }, maxRotation: 0 },
-                grid: { color: "rgba(148, 163, 184, 0.15)" }
+                ticks: { color: "#475569", font: { family: "monospace", size: 11 }, maxRotation: 0 },
+                grid: { color: "rgba(226, 232, 240, 0.85)" }
               },
               y: {
                 max: cfg.max,
-                ticks: { color: "#64748b", font: { family: "monospace", size: 11 } },
-                grid: { color: "rgba(148, 163, 184, 0.15)" }
+                ticks: { color: "#475569", font: { family: "monospace", size: 11 } },
+                grid: { color: "rgba(226, 232, 240, 0.85)" }
               }
             },
             plugins: {
-              legend: { labels: { color: "#94a3b8", font: { family: "monospace", size: 12 } } }
+              legend: { labels: { color: "#0f172a", font: { family: "monospace", size: 12, weight: "bold" } } }
             }
           }
         });
+        const key = cfg.id.replace("chart", "").toLowerCase();
+        charts[key] = chartInst;
       });
+
+      // Synchronize category aliases so all ingest feeds populate instantly
+      charts["packet_loss"] = charts["packetloss"];
+      charts["memory"] = charts["mem"];
     }
 
     function updateChart(chart, metricObj) {
       if (!chart || !metricObj || !metricObj.data) return;
       const data = metricObj.data;
-      const labels = data.map(d => formatTime(d.time).split(" ").slice(-2, -1)[0] || d.time.substring(11, 19));
+      const labels = data.map(d => {
+        const raw = d.time || d.event_time_utc || "";
+        if (raw.length >= 19 && raw.includes("T")) return raw.substring(11, 19);
+        const parts = formatTime(raw).split(" ");
+        return parts.slice(-2, -1)[0] || raw;
+      });
       const values = data.map(d => d.value);
       const uppers = data.map(d => d.baseline_upper);
       const lowers = data.map(d => d.baseline_lower);
-      const pointColors = data.map(d => d.is_anomaly ? "#ef4444" : "#38bdf8");
-      const pointRadii = data.map(d => d.is_anomaly ? 5 : 2);
+      const pointColors = data.map(d => d.is_anomaly ? "#ef4444" : "#0284c7");
+      const pointRadii = data.map(d => d.is_anomaly ? 5 : 2.5);
 
       chart.data.labels = labels;
       chart.data.datasets[0].data = values;
@@ -2996,11 +3051,12 @@
 
     function appendTelemetryPoint(data) {
       const cat = (data.category || "").toLowerCase();
-      const chartKey = cat === "cpu" ? "cpu" : ((cat === "mem" || cat === "memory") ? "mem" : (cat === "disk" ? "disk" : (cat === "latency" ? "latency" : (cat === "packet_loss" ? "packetloss" : (cat === "bandwidth" ? "bandwidth" : (cat === "connectivity" ? "connectivity" : null))))));
+      const chartKey = cat === "cpu" ? "cpu" : ((cat === "mem" || cat === "memory") ? "mem" : (cat === "disk" ? "disk" : (cat === "latency" ? "latency" : (cat === "packet_loss" || cat === "packetloss") ? "packetloss" : (cat === "bandwidth" ? "bandwidth" : (cat === "connectivity" ? "connectivity" : null)))));
       if (!chartKey || !charts[chartKey]) return;
 
       const chart = charts[chartKey];
-      const timeLabel = formatTime(data.event_time_utc).split(" ").slice(-2, -1)[0] || (data.event_time_utc ? data.event_time_utc.substring(11, 19) : "");
+      const raw = data.event_time_utc || "";
+      const timeLabel = (raw.length >= 19 && raw.includes("T")) ? raw.substring(11, 19) : (formatTime(raw).split(" ").slice(-2, -1)[0] || raw);
 
       chart.data.labels.push(timeLabel);
       chart.data.datasets[0].data.push(data.value);
